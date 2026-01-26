@@ -25,7 +25,7 @@ webmis-java/
 │    ├── core
 │    │    ├── Base.java                  // 基础类
 │    │    ├── GlobalCorsConfig.java      // 跨域配置
-│    │    ├── NotFoundException.java     // 404 错误响应
+│    │    └── NotFoundException.java     // 404 错误响应
 │    └── modules                          // 模块
 │    │    ├── admin                      // 后台
 │    │    ├── api                        // 应用
