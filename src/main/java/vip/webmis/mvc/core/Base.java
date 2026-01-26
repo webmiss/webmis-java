@@ -1,4 +1,4 @@
-package webmis.core;
+package vip.webmis.mvc.core;
 
 /* 基础 */
 public class Base {

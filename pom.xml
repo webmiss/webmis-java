@@ -3,62 +3,69 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <!-- 父项目: 统一管理依赖版本 -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.2.2</version>
+    <relativePath/>
+  </parent>
   <!-- 项目配置 -->
   <groupId>vip.webmis</groupId>
   <artifactId>webmis-java</artifactId>
   <version>3.0.0</version>
-  <!-- 打包方式 -->
-  <packaging>war</packaging>
   <name>WebMIS Java</name>
-  <description>HMVC框架（Maven+URL拆分）</description>
+  <description>HMVC框架（Maven + SpringBoot）</description>
   <!-- 依赖版本 -->
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <servlet-api.version>4.0.1</servlet-api.version>
-    <tomcat7-maven-plugin.version>2.2</tomcat7-maven-plugin.version>
   </properties>
   <!-- 依赖管理 -->
   <dependencies>
-    <!-- 容器（Tomcat）运行时提供，不打入war包 -->
+    <!-- SpringBoot Web 启动器 -->
     <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <version>${servlet-api.version}</version>
-      <scope>provided</scope>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
+    <!-- 模板引擎 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-thymeleaf</artifactId>
+    </dependency>
+    <!-- 测试依赖 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- 热重载 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-devtools</artifactId>
+      <scope>runtime</scope>
+      <optional>true</optional>
+    </dependency>
+    <!-- JSON处理 -->
+    <dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>fastjson</artifactId>
+			<version>2.0.60</version>
+		</dependency>
   </dependencies>
 
   <build>
     <!-- 打包名称 -->
     <finalName>webmis-java</finalName>
     <plugins>
-      <!-- Maven -->
+      <!-- 打包插件 -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>3.2.2</version>
         <configuration>
-          <source>${maven.compiler.source}</source>
-          <target>${maven.compiler.target}</target>
-          <encoding>UTF-8</encoding>
-          <failOnError>true</failOnError>
-        </configuration>
-      </plugin>
-      <!-- Tomcat -->
-      <plugin>
-        <groupId>org.apache.tomcat.maven</groupId>
-        <artifactId>tomcat7-maven-plugin</artifactId>
-        <version>${tomcat7-maven-plugin.version}</version>
-        <configuration>
-          <port>9020</port>
-          <path>/</path>
-          <uriEncoding>UTF-8</uriEncoding>
-          <!-- 热重载 -->
-          <!-- <reloadable>true</reloadable>
-          <contextReloadable>true</contextReloadable> -->
-          <scanIntervalSeconds>3</scanIntervalSeconds>
+          <fork>true</fork>
         </configuration>
       </plugin>
     </plugins>
