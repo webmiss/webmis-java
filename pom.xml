@@ -47,12 +47,13 @@
       <scope>runtime</scope>
       <optional>true</optional>
     </dependency>
-    <!-- JSON处理 -->
+    <!-- MySQL -->
     <dependency>
-			<groupId>com.alibaba</groupId>
-			<artifactId>fastjson</artifactId>
-			<version>2.0.60</version>
-		</dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.33</version>
+    <scope>runtime</scope>
+</dependency>
   </dependencies>
 
   <build>
