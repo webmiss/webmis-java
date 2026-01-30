@@ -2,7 +2,9 @@ package vip.webmis.mvc.core;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,22 +13,27 @@ import vip.webmis.mvc.config.Db;
 /* 模型 */
 public class Model extends Base {
   public Connection conn;                           // 连接
-  private String name = "Model";                      // 名称
-  private String table = "";                          // 数据表
-  private String columns = "*";                       // 字段
-  private String where = "";                          // 条件
-  private String group = "";                          // 分组
-  private String having = "";                         // 筛选
-  private String order = "";                          // 排序
-  private String limit = "";                          // 限制
-  private List<Object> args = new ArrayList<>();      // 参数
-  private String sql="";                            // SQL语句
+  private String name = "Model";                    // 名称
+  private String table = "";                        // 数据表
+  private String columns = "*";                     // 字段
+  private String where = "";                        // 条件
+  private String group = "";                        // 分组
+  private String having = "";                       // 筛选
+  private String order = "";                        // 排序
+  private String limit = "";                        // 限制
+  private List<Object> args = new ArrayList<>();    // 参数
+  private String sql = "";                          // SQL语句
+  private String keys = "";                         // 添加-键
+  private String values = "";                       // 添加-值
+  private String data = "";                         // 更新-数据
+  private Integer id = 0;                           // 自增ID
+  private Integer nums = 0;                         // 影响行数
 
   /* 获取连接 */
-  public Boolean DBConn() {
+  public Connection DBConn() {
     return this.DBConn("default");
   } 
-  public Boolean DBConn(String name) {
+  public Connection DBConn(String name) {
     Map<String, Object> config = new Db().Config(name);
     if (this.conn == null) {
       try {
@@ -45,9 +52,45 @@ public class Model extends Base {
         }
       }
     }
-    return this.conn != null ? true : false;
+    return this.conn;
   }
 
+  /* 执行SQL */
+  public PreparedStatement Exec(Connection conn, String sql, List<Object> args) {
+    try {
+      PreparedStatement stmt = conn.prepareStatement(sql);
+      for(int i=0;i<args.size();i++) {
+        stmt.setObject(i+1, args.get(i));
+      }
+      this.nums = stmt.executeUpdate();
+      return stmt;
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Exec:", e.getMessage());
+      return null;
+    } finally {
+      try {
+        if (conn != null && !conn.isClosed()) conn.close();
+      } catch (Exception e) {
+        Print("[ "+this.name+" ] Exec:", e.getMessage());
+      }
+    }
+  }
+
+  /* 获取-SQL */
+  public Object[] GetSQL() {
+    return new Object[]{this.sql, this.args};
+  }
+
+  /* 获取-自增ID */
+  public Integer GetID() {
+    return this.id;
+  }
+
+  /* 获取-影响行数 */
+  public Integer GetNums() {
+    return this.nums;
+  }
+  
   /* 表 */
   public void Table(String table) {
     this.table = table;
@@ -159,8 +202,182 @@ public class Model extends Base {
   }
 
   /* 查询-多条 */
-  public void Find(Object[] param) {
-    Object[] res = param!=null?param:SelectSQL();
+  public void Find(String sql, List<Object> args) {
+    if(sql.equals("")) {
+      Object[] res = this.SelectSQL();
+      sql = (String)res[0];
+      args = (List<Object>)res[1];
+    }
+    Print(sql, args);
+  }
+
+  /* 查询-单条 */
+  public void FindFirst() {
+    this.FindFirst("", null);
+  }
+  public void FindFirst(String sql, List<Object> args) {
+    if(sql.equals("")) {
+      this.Limit("0", "1");
+      Object[] res = this.SelectSQL();
+      sql = (String)res[0];
+      args = (List<Object>)res[1];
+    }
+    Print(sql, args);
+  }
+
+  /* 添加-单条 */
+  public void Insert(Map<String, Object> data) {
+    this.args = new ArrayList<>();
+    String keys = "";
+    String vals = "";
+    for(Map.Entry<String, Object> entry : data.entrySet()) {
+      keys += entry.getKey() + ",";
+      vals += "?,";
+      this.args.add(entry.getValue());
+    }
+    if(!keys.equals("")) {
+      this.keys = keys.substring(0, keys.length()-1);
+      this.values = vals.substring(0, vals.length()-1);
+    }
+  }
+
+  /* 添加-多条 */
+  public void ValuesAll(ArrayList<HashMap<String, Object>> data) {
+    String keys = "";
+    String vals = "";
+    String tmp = "";
+    for(Map.Entry<String, Object> entry : data.get(0).entrySet()) {
+      keys += entry.getKey() + ",";
+    }
+    for(HashMap<String, Object> row : data) {
+      tmp = "";
+      for(Object val : row.values()) {
+        vals += val + ",";
+        tmp += "?,";
+        this.args.add(val);
+      }
+      vals += "("+tmp.substring(0, tmp.length()-1)+"),";
+    }
+    if(!keys.equals("")) {
+      this.keys = columns.substring(0, keys.length()-1);
+      this.values = vals.substring(0, vals.length()-1);
+    }
+  }
+
+  /* 添加-SQL */
+  public Object[] InsertSQL() {
+    //  验证
+    if(this.table.equals("")) {
+      Print("[ "+this.name+" ]", "Insert: 表不能为空!");
+      return null;
+    }
+    if(this.keys.equals("") || this.values.equals("")) {
+      Print("[ "+this.name+" ]", "Insert: 字段或值不能为空!");
+      return null;
+    }
+    // SQL
+    this.sql = "INSERT INTO " + this.table + " (" + this.keys + ") VALUES (" + this.values + ")";
+    this.table = "";
+    this.keys = "";
+    this.values = "";
+    // 参数
+    List<Object> args = this.args;
+    this.args = new ArrayList<>();
+    // 结果
+    return new Object[]{this.sql, args};
+  }
+
+  /* 添加-执行 */
+  public void Insert(String sql, List<Object> args) {
+    if(sql.equals("")) {
+      Object[] res = this.InsertSQL();
+      sql = (String)res[0];
+      args = (List<Object>)res[1];
+    }
+    Print(sql, args);
+  }
+
+  /* 更新-数据 */
+  public void Set(Map<String, Object> data) {
+    this.args = new ArrayList<>();
+    String vals = "";
+    for(Map.Entry<String, Object> entry : data.entrySet()) {
+      vals += entry.getKey() + "=?,";
+      this.args.add(entry.getValue());
+    }
+    if(!this.data.equals("")) {
+      this.data = columns.substring(0, vals.length()-1);
+    }
+  }
+
+  /* 更新-SQL */
+  public Object[] UpdateSQL() {
+    //  验证
+    if(this.table.equals("")) {
+      Print("[ "+this.name+" ]", "Update: 表不能为空!");
+      return null;
+    }
+    if(this.sql.equals("")) {
+      Print("[ "+this.name+" ]", "Update: 数据不能为空!");
+      return null;
+    }
+    if(this.where.equals("")) {
+      Print("[ "+this.name+" ]", "Update: 条件不能为空!");
+      return null;
+    }
+    // SQL
+    this.sql = "UPDATE " + this.table + " SET " + this.data + " WHERE " + this.where;
+    // 重置
+    this.table = "";
+    this.data = "";
+    this.where = "";
+    // 参数
+    List<Object> args = this.args;
+    this.args = new ArrayList<>();
+    // 结果
+    return new Object[]{this.sql, args};
+  }
+
+  /* 更新-执行 */
+  public void Update(String sql, List<Object> args) {
+    if(sql.equals("")) {
+      Object[] res = this.UpdateSQL();
+      sql = (String)res[0];
+      args = (List<Object>)res[1];
+    }
+    Print(sql, args);
+  }
+
+  /* 删除-SQL */
+  public Object[] DeleteSQL() {
+    //  验证
+    if(this.table.equals("")) {
+      Print("[ "+this.name+" ]", "Delete: 表不能为空!");
+      return null;
+    }
+    if(this.where.equals("")) {
+      Print("[ "+this.name+" ]", "Delete: 条件不能为空!");
+      return null;
+    }
+    // SQL
+    this.sql = "DELETE FROM " + this.table + " WHERE " + this.where;
+    // 重置
+    this.table = "";
+    this.where = "";
+    // 结果
+    List<Object> args = this.args;
+    this.args = new ArrayList<>();
+    return new Object[]{this.sql, args};
+  }
+
+  /* 删除-执行 */
+  public void Delete(String sql, List<Object> args) {
+    if(sql.equals("")) {
+      Object[] res = this.DeleteSQL();
+      sql = (String)res[0];
+      args = (List<Object>)res[1];
+    }
+    Print(sql, args);
   }
 
 }

@@ -20,7 +20,10 @@ public class Index extends Base {
   /* 首页 */
   @RequestMapping(name="", produces="application/json;charset=UTF-8")
   public Map<String, Object> index() {
-    User user = new User();
+    User m = new User();
+    m.Columns("id");
+    m.Where("name=?", "admin");
+    m.FindFirst();
     // 返回
     HashMap<String,Object> res = new HashMap<String,Object>();
     res.put("code",0);
