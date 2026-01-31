@@ -3,6 +3,9 @@ package vip.webmis.mvc.core;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,13 +46,6 @@ public class Model extends Base {
         this.conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
       } catch (Exception e) {
         Print("[ "+this.name+" ] Conn:", e.getMessage());
-      } finally {
-        try {
-          if (this.conn != null && !this.conn.isClosed()) this.conn.close();
-          Print("[ "+this.name+" ] Reconnect DB");
-        } catch (Exception e) {
-          Print("[ "+this.name+" ] Conn:", e.getMessage());
-        }
       }
     }
     return this.conn;
@@ -57,28 +53,24 @@ public class Model extends Base {
 
   /* 执行SQL */
   public PreparedStatement Exec(Connection conn, String sql, List<Object> args) {
+    return this.Exec(conn, sql, args, true);
+  }
+  public PreparedStatement Exec(Connection conn, String sql, List<Object> args, boolean isQuery) {
     try {
-      PreparedStatement stmt = conn.prepareStatement(sql);
+      PreparedStatement ps = isQuery?conn.prepareStatement(sql):conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
       for(int i=0;i<args.size();i++) {
-        stmt.setObject(i+1, args.get(i));
+        ps.setObject(i+1, args.get(i));
       }
-      this.nums = stmt.executeUpdate();
-      return stmt;
+      return ps;
     } catch (Exception e) {
       Print("[ "+this.name+" ] Exec:", e.getMessage());
       return null;
-    } finally {
-      try {
-        if (conn != null && !conn.isClosed()) conn.close();
-      } catch (Exception e) {
-        Print("[ "+this.name+" ] Exec:", e.getMessage());
-      }
     }
   }
 
   /* 获取-SQL */
-  public Object[] GetSQL() {
-    return new Object[]{this.sql, this.args};
+  public String GetSQL() {
+    return this.sql;
   }
 
   /* 获取-自增ID */
@@ -202,31 +194,65 @@ public class Model extends Base {
   }
 
   /* 查询-多条 */
-  public void Find(String sql, List<Object> args) {
+  public List<HashMap<String,Object>> Find() {
+    return this.Find("", null);
+  }
+  public List<HashMap<String,Object>> Find(String sql, List<Object> args) {
     if(sql.equals("")) {
       Object[] res = this.SelectSQL();
       sql = (String)res[0];
       args = (List<Object>)res[1];
+      if(sql.equals("")) return new ArrayList<>();
     }
-    Print(sql, args);
+    PreparedStatement ps = this.Exec(this.conn, sql, args);
+    if(ps == null) return new ArrayList<>();
+    List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
+    return data;
   }
 
   /* 查询-单条 */
-  public void FindFirst() {
-    this.FindFirst("", null);
+  public Map<String,Object> FindFirst() {
+    return this.FindFirst("", null);
   }
-  public void FindFirst(String sql, List<Object> args) {
+  public Map<String,Object> FindFirst(String sql, List<Object> args) {
     if(sql.equals("")) {
       this.Limit("0", "1");
       Object[] res = this.SelectSQL();
       sql = (String)res[0];
       args = (List<Object>)res[1];
+      if(sql.equals("")) return new HashMap<>();
     }
-    Print(sql, args);
+    PreparedStatement ps = this.Exec(this.conn, sql, args);
+    if(ps == null) return new HashMap<>();
+    List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
+    if(data.size() == 0) return new HashMap<>();
+    return data.get(0);
+  }
+
+  /* 查询-结果 */
+  public List<HashMap<String,Object>> FindDataAll(Connection conn, PreparedStatement ps) {
+    List<HashMap<String,Object>> res = new ArrayList<>();
+    try {
+      ResultSet rs = ps.executeQuery();
+      ResultSetMetaData data = rs.getMetaData();
+      while(rs.next()) {
+        HashMap<String,Object> row = new HashMap<>();
+        for(int i=1;i<=data.getColumnCount();i++) {
+          row.put(data.getColumnName(i), rs.getObject(i));
+        }
+        res.add(row);
+      }
+      rs.close();
+      ps.close();
+      conn.close();
+    } catch (SQLException e) {
+      Print("[ "+this.name+" ]", "Query: "+e.getMessage());
+    }
+    return res;
   }
 
   /* 添加-单条 */
-  public void Insert(Map<String, Object> data) {
+  public void Values(Map<String, Object> data) {
     this.args = new ArrayList<>();
     String keys = "";
     String vals = "";
@@ -288,13 +314,29 @@ public class Model extends Base {
   }
 
   /* 添加-执行 */
-  public void Insert(String sql, List<Object> args) {
+  public Integer Insert() {
+    return this.Insert("", null);
+  }
+  public Integer Insert(String sql, List<Object> args) {
     if(sql.equals("")) {
       Object[] res = this.InsertSQL();
+      if(res == null) return -1;
       sql = (String)res[0];
       args = (List<Object>)res[1];
     }
-    Print(sql, args);
+    try {
+      PreparedStatement ps = this.Exec(this.conn, sql, args, false);
+      this.nums = ps.executeUpdate();
+      ResultSet rs = ps.getGeneratedKeys();
+      this.id = rs.next()?rs.getInt(1):0;
+      rs.close();
+      ps.close();
+      this.conn.close();
+      return this.id;
+    } catch (SQLException e) {
+      Print("[ "+this.name+" ]", "Insert: "+e.getMessage());
+      return -1;
+    }
   }
 
   /* 更新-数据 */
@@ -305,8 +347,8 @@ public class Model extends Base {
       vals += entry.getKey() + "=?,";
       this.args.add(entry.getValue());
     }
-    if(!this.data.equals("")) {
-      this.data = columns.substring(0, vals.length()-1);
+    if(!vals.equals("")) {
+      this.data = vals.substring(0, vals.length()-1);
     }
   }
 
@@ -317,7 +359,7 @@ public class Model extends Base {
       Print("[ "+this.name+" ]", "Update: 表不能为空!");
       return null;
     }
-    if(this.sql.equals("")) {
+    if(this.data.equals("")) {
       Print("[ "+this.name+" ]", "Update: 数据不能为空!");
       return null;
     }
@@ -326,7 +368,7 @@ public class Model extends Base {
       return null;
     }
     // SQL
-    this.sql = "UPDATE " + this.table + " SET " + this.data + " WHERE " + this.where;
+    this.sql = "UPDATE " + this.table + " SET " + this.data + this.where;
     // 重置
     this.table = "";
     this.data = "";
@@ -339,13 +381,26 @@ public class Model extends Base {
   }
 
   /* 更新-执行 */
-  public void Update(String sql, List<Object> args) {
+  public Boolean Update() {
+    return this.Update("", null);
+  }
+  public Boolean Update(String sql, List<Object> args) {
     if(sql.equals("")) {
       Object[] res = this.UpdateSQL();
+      if(res == null) return false;
       sql = (String)res[0];
       args = (List<Object>)res[1];
     }
-    Print(sql, args);
+    try {
+      PreparedStatement ps = this.Exec(this.conn, sql, args, false);
+      this.nums = ps.executeUpdate();
+      ps.close();
+      this.conn.close();
+      return true;
+    } catch (SQLException e) {
+      Print("[ "+this.name+" ]", "Update: "+e.getMessage());
+      return false;
+    }
   }
 
   /* 删除-SQL */
@@ -360,7 +415,7 @@ public class Model extends Base {
       return null;
     }
     // SQL
-    this.sql = "DELETE FROM " + this.table + " WHERE " + this.where;
+    this.sql = "DELETE FROM " + this.table + this.where;
     // 重置
     this.table = "";
     this.where = "";
@@ -371,13 +426,26 @@ public class Model extends Base {
   }
 
   /* 删除-执行 */
-  public void Delete(String sql, List<Object> args) {
+  public Boolean Delete() {
+    return this.Delete("", null);
+  }
+  public Boolean Delete(String sql, List<Object> args) {
     if(sql.equals("")) {
       Object[] res = this.DeleteSQL();
+      if(res == null) return false;
       sql = (String)res[0];
       args = (List<Object>)res[1];
     }
-    Print(sql, args);
+    try {
+      PreparedStatement ps = this.Exec(this.conn, sql, args, false);
+      this.nums = ps.executeUpdate();
+      ps.close();
+      this.conn.close();
+      return true;
+    } catch (SQLException e) {
+      Print("[ "+this.name+" ]", "Delete: "+e.getMessage());
+      return false;
+    }
   }
 
 }

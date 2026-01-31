@@ -6,6 +6,7 @@ import vip.webmis.mvc.core.Base;
 import vip.webmis.mvc.models.User;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Controller;
@@ -20,10 +21,11 @@ public class Index extends Base {
   /* 首页 */
   @RequestMapping(name="", produces="application/json;charset=UTF-8")
   public Map<String, Object> index() {
+    // 查询
     User m = new User();
-    m.Columns("id");
-    m.Where("name=?", "admin");
-    m.FindFirst();
+    m.Columns("id", "uname");
+    List<HashMap<String, Object>> data = m.Find();
+    Print("Data", data, m.GetSQL(), m.GetNums());
     // 返回
     HashMap<String,Object> res = new HashMap<String,Object>();
     res.put("code",0);
