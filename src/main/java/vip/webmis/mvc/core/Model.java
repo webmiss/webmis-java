@@ -1,7 +1,6 @@
 package vip.webmis.mvc.core;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -15,6 +14,7 @@ import vip.webmis.mvc.config.Db;
 
 /* 模型 */
 public class Model extends Base {
+  public static MySQLConnectionPool pool;           // 连接池
   public Connection conn;                           // 连接
   private String name = "Model";                    // 名称
   private String table = "";                        // 数据表
@@ -37,13 +37,19 @@ public class Model extends Base {
     return this.DBConn("default");
   } 
   public Connection DBConn(String name) {
+    // 配置
     Map<String, Object> config = new Db().Config(name);
+    int InitSize = (Integer)config.get("poolInitSize");
+    int MaxSize = (Integer)config.get("poolMaxSize");
+    int MaxWait = (Integer)config.get("poolMaxWait");
+    // 连接池
+    if(Model.pool == null) {
+      Model.pool = new MySQLConnectionPool(config, InitSize, MaxSize);
+    }
+    // 创建连接
     if (this.conn == null) {
       try {
-        String URL = "jdbc:" + config.get("type") + "://" + config.get("host") + ":" + config.get("port") + "/" + config.get("database") + "?useUnicode=true&characterEncoding=" + config.get("charset");
-        String USERNAME = (String)config.get("user");
-        String PASSWORD = (String)config.get("password");
-        this.conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        this.conn = Model.pool.getConnection(MaxWait);
       } catch (Exception e) {
         Print("[ "+this.name+" ] Conn:", e.getMessage());
       }
@@ -65,6 +71,19 @@ public class Model extends Base {
     } catch (Exception e) {
       Print("[ "+this.name+" ] Exec:", e.getMessage());
       return null;
+    }
+  }
+
+  /* 关闭 */
+  public void Close() {
+    try {
+      if (Model.pool != null) {
+        // 归还连接池
+        Model.pool.releaseConnection(this.conn);
+        this.conn = null;
+      }
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Close:", e.getMessage());
     }
   }
 
@@ -244,7 +263,7 @@ public class Model extends Base {
       }
       rs.close();
       ps.close();
-      conn.close();
+      this.Close();
     } catch (SQLException e) {
       Print("[ "+this.name+" ]", "Query: "+e.getMessage());
     }
@@ -331,7 +350,7 @@ public class Model extends Base {
       this.id = rs.next()?rs.getInt(1):0;
       rs.close();
       ps.close();
-      this.conn.close();
+      this.Close();
       return this.id;
     } catch (SQLException e) {
       Print("[ "+this.name+" ]", "Insert: "+e.getMessage());
@@ -395,7 +414,7 @@ public class Model extends Base {
       PreparedStatement ps = this.Exec(this.conn, sql, args, false);
       this.nums = ps.executeUpdate();
       ps.close();
-      this.conn.close();
+      this.Close();
       return true;
     } catch (SQLException e) {
       Print("[ "+this.name+" ]", "Update: "+e.getMessage());
@@ -440,7 +459,7 @@ public class Model extends Base {
       PreparedStatement ps = this.Exec(this.conn, sql, args, false);
       this.nums = ps.executeUpdate();
       ps.close();
-      this.conn.close();
+      this.Close();
       return true;
     } catch (SQLException e) {
       Print("[ "+this.name+" ]", "Delete: "+e.getMessage());
