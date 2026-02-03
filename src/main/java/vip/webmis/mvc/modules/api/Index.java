@@ -3,6 +3,7 @@ package vip.webmis.mvc.modules.api;
 import org.springframework.web.bind.annotation.RestController;
 
 import vip.webmis.mvc.core.Base;
+import vip.webmis.mvc.core.Redis;
 import vip.webmis.mvc.models.User;
 
 import java.util.HashMap;
@@ -25,7 +26,11 @@ public class Index extends Base {
     User m = new User();
     m.Columns("id", "uname");
     List<HashMap<String, Object>> data = m.Find();
-    Print("Data", data, m.GetSQL(), m.GetNums());
+    // Redis
+    Redis r = new Redis();
+    r.Set("test", "Java Redis");
+    Print("Data", data, r.Get("test"));
+    r.Close();
     // 返回
     HashMap<String,Object> res = new HashMap<String,Object>();
     res.put("code",0);

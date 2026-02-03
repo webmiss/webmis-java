@@ -16,7 +16,7 @@ import vip.webmis.mvc.config.Db;
 public class Model extends Base {
   public static MySQLConnectionPool pool;           // 连接池
   public Connection conn;                           // 连接
-  private String name = "Model";                    // 名称
+  private final String name = "Model";              // 名称
   private String table = "";                        // 数据表
   private String columns = "*";                     // 字段
   private String where = "";                        // 条件

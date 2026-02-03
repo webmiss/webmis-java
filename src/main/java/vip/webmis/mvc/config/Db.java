@@ -21,8 +21,8 @@ public class Db {
         data.put("password", "123456");                             // 密码
         data.put("database", "webmis");                             // 数据库
         data.put("charset", "utf8");                                // 编码
-        data.put("poolInitSize", 100);                              // 连接池初始数量
-        data.put("poolMaxSize", 150);                               // 连接池最大数量
+        data.put("poolInitSize", 10);                               // 连接池初始数量
+        data.put("poolMaxSize", 15);                                // 连接池最大数量
         data.put("poolMaxWait", 3000);                              // 获取连接等待时间( 毫秒 )
         break;
       case "other":

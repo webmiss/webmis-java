@@ -46,7 +46,7 @@ public class MySQLConnectionPool extends Base {
         Connection conn = createConnection();
         idleConnections.offer(conn);
       } catch (SQLException e) {
-        Print("[ " + this.name +  "]", e.getMessage());
+        Print("[ " + this.name + " ]", e.getMessage());
       }
     }
   }
@@ -64,7 +64,7 @@ public class MySQLConnectionPool extends Base {
       if (idleConnections.size() + (maxSize - idleConnections.remainingCapacity()) < maxSize) {
         return createConnection();
       } else {
-        throw new SQLException("[ " + this.name + "] 连接池已满，获取连接超时");
+        throw new SQLException("[ " + this.name + " ] 连接池已满，获取连接超时");
       }
     }
     // 校验连接
@@ -85,7 +85,7 @@ public class MySQLConnectionPool extends Base {
       try {
         conn.close();
       } catch (SQLException ex) {
-        Print("[ " + this.name +  "]", e.getMessage());
+        Print("[ " + this.name + " ]", e.getMessage());
       }
     }
   }
@@ -101,7 +101,7 @@ public class MySQLConnectionPool extends Base {
       try {
         if (!conn.isClosed()) conn.close();
       } catch (SQLException e) {
-        Print("[ " + this.name +  "]", e.getMessage());
+        Print("[ " + this.name +  " ]", e.getMessage());
       }
     }
     idleConnections.clear();
