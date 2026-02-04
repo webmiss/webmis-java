@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -214,16 +215,17 @@ public class Model extends Base {
 
   /* 查询-多条 */
   public List<HashMap<String,Object>> Find() {
-    return this.Find("", null);
+    return this.Find("");
   }
-  public List<HashMap<String,Object>> Find(String sql, List<Object> args) {
+  public List<HashMap<String,Object>> Find(String sql, Object... args) {
+    List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       Object[] res = this.SelectSQL();
       sql = (String)res[0];
-      args = (List<Object>)res[1];
+      param = (List<Object>)res[1];
       if(sql.equals("")) return new ArrayList<>();
     }
-    PreparedStatement ps = this.Exec(this.conn, sql, args);
+    PreparedStatement ps = this.Exec(this.conn, sql, param);
     if(ps == null) return new ArrayList<>();
     List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
     return data;
@@ -231,17 +233,18 @@ public class Model extends Base {
 
   /* 查询-单条 */
   public Map<String,Object> FindFirst() {
-    return this.FindFirst("", null);
+    return this.FindFirst("");
   }
-  public Map<String,Object> FindFirst(String sql, List<Object> args) {
+  public Map<String,Object> FindFirst(String sql, Object... args) {
+    List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       this.Limit("0", "1");
       Object[] res = this.SelectSQL();
       sql = (String)res[0];
-      args = (List<Object>)res[1];
+      param = (List<Object>)res[1];
       if(sql.equals("")) return new HashMap<>();
     }
-    PreparedStatement ps = this.Exec(this.conn, sql, args);
+    PreparedStatement ps = this.Exec(this.conn, sql, param);
     if(ps == null) return new HashMap<>();
     List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
     if(data.size() == 0) return new HashMap<>();
@@ -334,17 +337,18 @@ public class Model extends Base {
 
   /* 添加-执行 */
   public Integer Insert() {
-    return this.Insert("", null);
+    return this.Insert("");
   }
-  public Integer Insert(String sql, List<Object> args) {
+  public Integer Insert(String sql, Object... args) {
+    List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       Object[] res = this.InsertSQL();
       if(res == null) return -1;
       sql = (String)res[0];
-      args = (List<Object>)res[1];
+      param = (List<Object>)res[1];
     }
     try {
-      PreparedStatement ps = this.Exec(this.conn, sql, args, false);
+      PreparedStatement ps = this.Exec(this.conn, sql, param, false);
       this.nums = ps.executeUpdate();
       ResultSet rs = ps.getGeneratedKeys();
       this.id = rs.next()?rs.getInt(1):0;
@@ -401,17 +405,18 @@ public class Model extends Base {
 
   /* 更新-执行 */
   public Boolean Update() {
-    return this.Update("", null);
+    return this.Update("");
   }
-  public Boolean Update(String sql, List<Object> args) {
+  public Boolean Update(String sql, Object... args) {
+    List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       Object[] res = this.UpdateSQL();
       if(res == null) return false;
       sql = (String)res[0];
-      args = (List<Object>)res[1];
+      param = (List<Object>)res[1];
     }
     try {
-      PreparedStatement ps = this.Exec(this.conn, sql, args, false);
+      PreparedStatement ps = this.Exec(this.conn, sql, param, false);
       this.nums = ps.executeUpdate();
       ps.close();
       this.Close();
@@ -446,17 +451,18 @@ public class Model extends Base {
 
   /* 删除-执行 */
   public Boolean Delete() {
-    return this.Delete("", null);
+    return this.Delete("");
   }
-  public Boolean Delete(String sql, List<Object> args) {
+  public Boolean Delete(String sql, Object... args) {
+    List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       Object[] res = this.DeleteSQL();
       if(res == null) return false;
       sql = (String)res[0];
-      args = (List<Object>)res[1];
+      param = (List<Object>)res[1];
     }
     try {
-      PreparedStatement ps = this.Exec(this.conn, sql, args, false);
+      PreparedStatement ps = this.Exec(this.conn, sql, param, false);
       this.nums = ps.executeUpdate();
       ps.close();
       this.Close();
