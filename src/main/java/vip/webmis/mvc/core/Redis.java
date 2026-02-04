@@ -1,5 +1,6 @@
 package vip.webmis.mvc.core;
 
+import io.lettuce.core.KeyValue;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -9,10 +10,8 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /* 缓存数据库 */
 public class Redis  extends Base {
@@ -36,7 +35,7 @@ public class Redis  extends Base {
         RedisURI redisURI = RedisURI.builder()
         .withHost((String)cfg.get("host"))
         .withPort((Integer)cfg.get("port"))
-        .withPassword((String)cfg.get("password"))
+        .withPassword(((String)cfg.get("password")).toCharArray())
         .withDatabase((Integer)cfg.get("db"))
         .withTimeout(Duration.ofMillis(5000))
         .build();
@@ -187,6 +186,38 @@ public class Redis  extends Base {
   public Long HLen(String key) {
     if (this.conn == null) return null;
     return this.conn.sync().hlen(key);
+  }
+
+  /* 列表(List)-添加 */
+  public Long LPush(String key, String value) {
+    if (this.conn == null) return null;
+    return this.conn.sync().lpush(key, value);
+  }
+  public Long RPush(String key, String value) {
+    if (this.conn == null) return null;
+    return this.conn.sync().rpush(key, value);
+  }
+
+  /* 列表(List)-获取 */
+  public List<String> LRange(String key) {
+    if (this.conn == null) return null;
+    return this.conn.sync().lrange(key, 0, -1);
+  }
+  public String LPop(String key) {
+    if (this.conn == null) return null;
+    return this.conn.sync().lpop(key);
+  }
+  public String RPop(String key) {
+    if (this.conn == null) return null;
+    return this.conn.sync().rpop(key);
+  }
+  public KeyValue<String, String> BLPop(String key) {
+    if (this.conn == null) return null;
+    return this.conn.sync().blpop(0, key);
+  }
+  public KeyValue<String, String> BRPop(String key) {
+    if (this.conn == null) return null;
+    return this.conn.sync().brpop(0, key);
   }
   
 }
