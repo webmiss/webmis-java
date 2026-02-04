@@ -26,7 +26,11 @@ webmis-java/
 │    │    ├── Base.java                  // 基础类
 │    │    ├── GlobalCorsConfig.java      // 跨域配置
 │    │    ├── Model.java                 // 基础模型
-│    │    └── NotFoundException.java     // 404 错误响应
+│    │    ├── MySQLConnectionPool.java   // MySQL 连接池
+│    │    ├── NotFoundException.java     // 404 错误响应
+│    │    └── Redis.java                 // 缓存数据库( 连接池 )
+│    └── librarys                         // 第三方类
+│    └── models                           // 模型
 │    └── modules                          // 模块
 │    │    ├── admin                      // 后台
 │    │    ├── api                        // 应用
