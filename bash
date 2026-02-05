@@ -2,8 +2,9 @@
 
 # 配置
 s=$1
-jar='webmis-java.war'
-log='public/upload/server.log'
+name='webmis-java'
+version='3.0.0'
+log='public/server.log'
 
 # 运行
 if [ "$s" == "serve" ]; then
@@ -13,20 +14,20 @@ elif [ "$s" == "install" ]; then
   mvn clean install -e -U -DskipTests
 # 打包
 elif [ "$s" == "build" ]; then
-  mvn package -DskipTests && rm -fr "./$jar" && cp "target/$jar" ./
+  mvn package -DskipTests && rm -fr "./$name$version.jar" && cp "target/$name.jar" "./$name$version.jar"
 # 启动
 elif [ "$s" == "start" ]; then
-  nohup java -jar $jar > $log 2>&1 &
+  nohup java -jar $name$version.jar > $log 2>&1 &
 # 停止
 elif [ "$s" == "stop" ]; then
-  ps -aux | grep java | grep -v grep | awk {'print $2'} | xargs kill
+  ps -aux | grep "java -jar $name$version.jar" | grep -v grep | awk {'print $2'} | xargs kill
 else
   echo "----------------------------------------------------"
   echo "[use] ./bash <command>"
   echo "----------------------------------------------------"
   echo "  ./bash <command>"
   echo "<command>"
-  echo "  serve         运行: mvn tomcat7:run"
+  echo "  serve         运行: mvn spring-boot:run"
   echo "  install       安装依赖包: pom.xml"
   echo "  build         打包: mvn package -DskipTests"
   echo "<Server>"
