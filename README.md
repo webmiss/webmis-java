@@ -3,16 +3,23 @@
 
 ## 安装
 ```bash
+# 下载
 $ git clone https://github.com/webmiss/webmis-java.git
 $ cd webmis-java
-$ ./bash install
+
+# Linux、MacOS
+./bash install
+
+# Windows 11
+.\cmd install
 ```
 
 ## 运行
 ```bash
 # Linux、MacOS
 ./bash serve
-# Windows
+
+# Windows 11
 .\cmd serve
 ```
 

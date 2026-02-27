@@ -11,7 +11,7 @@ if [ "$s" == "serve" ]; then
   mvn spring-boot:run
 # 安装
 elif [ "$s" == "install" ]; then
-  mvn clean install -e -U -DskipTests
+  mvn clean && mvn compile
 # 打包
 elif [ "$s" == "build" ]; then
   mvn package -DskipTests && rm -fr "./$name$version.jar" && cp "target/$name.jar" "./$name$version.jar"
