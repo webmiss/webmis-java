@@ -37,10 +37,11 @@ if %errorLevel% neq 0 (
     echo [✓] 下载文件：%java_url%
     curl -L "%java_url%" -o java.zip
     @REM 解压文件
+    echo [✓] 正在解压: java.zip
     powershell -Command "Expand-Archive -Path 'java.zip' -DestinationPath '%java_dir%' -Force"
     xcopy "%java_dir%\jdk-%java_version%\*" "%java_dir%\" /e /y >nul
     rmdir /s /q "%java_dir%\jdk-%java_version%" >nul
-    echo [✓] java.zip 到 %java_dir%
+    echo [✓] 解压文件: java.zip 到 %java_dir%
     @REM 删除文件
     del java.zip >nul 2>&1
   )
@@ -49,25 +50,29 @@ if %errorLevel% neq 0 (
     echo [✓] 下载文件：%maven_url%
     curl -L "%maven_url%" -o maven.zip
     @REM 解压文件
+    echo [✓] 正在解压: maven.zip
     powershell -Command "Expand-Archive -Path 'maven.zip' -DestinationPath '%maven_dir%' -Force"
     xcopy "%maven_dir%\apache-maven-%maven_version%\*" "%maven_dir%\" /e /y >nul
     rmdir /s /q "%maven_dir%\apache-maven-%maven_version%" >nul
-    echo [✓] maven.zip 到 %maven_dir%
+    echo [✓] 解压文件: maven.zip 到 %maven_dir%
     @REM 删除文件
     del maven.zip >nul 2>&1
   )
-  @REM 安装JDK
-  echo [✓] 安装成功：请手动添加环境变量并重启终端
-  echo JAVA_HOME=%java_dir%
-  echo MAVEN_HOME=%maven_dir%
-  echo PATH=%java_dir%\bin
-  echo PATH=%maven_dir%\bin
+  @REM 配置环境变量
+  echo [✓] 安装成功：请手动添加环境变量
+  echo JAVA_HOME %java_dir%
+  echo PATH %java_dir%\bin
+  echo MAVEN_HOME %maven_dir%
+  echo PATH %maven_dir%\bin
   pause
-  @REM 查看版本
+  @REM 验证
   java -version >nul 2>&1
   if %errorLevel% neq 0 (
-    @REM 环境变量
+    @REM 临时环境变量
+    set JAVA_HOME=%java_dir%
+    set MAVEN_HOME=%maven_dir%
     set PATH=%PATH%;%java_dir%\bin;%maven_dir%\bin
+    @REM 查看版本
     java -version
     mvn -v
   )
@@ -79,6 +84,7 @@ if "%s%"=="serve" (
 REM 安装
 ) else if "%s%"=="install" (
   mvn clean && mvn compile
+  echo [✓] 运行: .\cmd serve
 REM 打包
 ) else if "%s%"=="build" (
   mvn package -DskipTests && del .\%name%%version%.jar && copy target\%name%.jar .\%name%%version%.jar
