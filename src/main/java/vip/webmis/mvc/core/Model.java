@@ -140,6 +140,7 @@ public class Model extends Base {
 
   /* 条件 */
   public void Where(String where, Object... args) {
+    if(where.equals("")) return;
     this.where = " WHERE " + where;
     for(Object arg : args) {
       this.args.add(arg);

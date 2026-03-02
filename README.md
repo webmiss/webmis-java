@@ -1,6 +1,12 @@
 # webmis-java
 采用Java + Maven + SpringBoot开发的轻量级HMVC基础框架，目录结构清晰，支持CLI方式访问资料方便执行定时脚本。包括HMVC模块化管理、自动路由、CLI命令行、Socket通信、redis缓存、Token机制等功能，提供支付宝、微信、文件上传、图像处理、二维码等常用类。
 
+**演示**
+- 使用文档( [https://webmis.vip/](https://webmis.vip/java/install/index) )
+- 网站-API( [https://java.webmis.vip/](https://java.webmis.vip/) )
+- 前端-API( [https://java.webmis.vip/api](https://java.webmis.vip/api) )
+- 后台-API( [https://java.webmis.vip/admin](https://java.webmis.vip/admin) )
+
 ## 安装
 ```bash
 # 下载
@@ -14,13 +20,56 @@ $ cd webmis-java
 .\cmd install
 ```
 
-## 运行
+## 开发环境
 ```bash
 # Linux、MacOS
 ./bash serve
-
 # Windows 11
 .\cmd serve
+```
+
+## 生产环境
+### Ubuntu
+```bash
+# Nginx、MariaDB、Redis
+apt install -y nginx mariadb-server redis-server
+# Java
+apt install -y default-jre
+# 打包
+./bash build
+# 运行
+./bash start
+# 停止
+./bash stop
+```
+
+### Nginx
+```bash
+upstream java {
+    server localhost:9020;
+}
+server {
+    server_name  java.webmis.vip;
+    set $root_path /home/www/webmis/java/public;
+    root $root_path;
+    index index.html;
+
+    location / {
+        proxy_pass http://java;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location ~* ^/(upload|favicon.png)/(.+)$ {
+        root $root_path;
+        add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization';
+        if ($request_method = 'OPTIONS') { return 204; }
+    }
+
+}
 ```
 
 ## 项目结构
