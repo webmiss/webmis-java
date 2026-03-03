@@ -6,12 +6,24 @@ name='webmis-java'
 version='3.0.0'
 log='public/server.log'
 
+# Java环境
+if ! command -v java &> /dev/null; then
+  echo "> 请安装'java'"
+  exit
+fi
+# Maven环境
+if ! command -v mvn &> /dev/null; then
+  echo "> 请安装'maven'"
+  exit
+fi
+
 # 运行
 if [ "$s" == "serve" ]; then
   mvn spring-boot:run
 # 安装
 elif [ "$s" == "install" ]; then
   mvn clean && mvn compile
+  echo "运行: ./bash serve"
 # 打包
 elif [ "$s" == "build" ]; then
   mvn package -DskipTests && rm -fr "./$name$version.jar" && cp "target/$name.jar" "./$name$version.jar"
