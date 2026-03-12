@@ -1,4 +1,4 @@
-package vip.webmis.mvc.modules.home;
+package vip.webmis.mvc.modules.web;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +18,7 @@ public class Index extends Base {
   String index(Model model) {
     model.addAttribute("title", Env.title);
     model.addAttribute("copy", Env.copy);  
-    return "home/index";
+    return "web/index";
   }
   
 }
