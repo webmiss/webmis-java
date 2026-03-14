@@ -3,8 +3,17 @@ package vip.webmis.mvc.core;
 import java.lang.reflect.Field;
 import java.util.Map;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 /* 控制器 */
 public class ControllerBase extends Base {
+
+  /* 资源地址 */
+  public String BaseUrl(HttpServletRequest request, String url) {
+    String http = "http";
+    if(request.isSecure()) http = "https";
+    return http+"://"+request.getServerName()+":"+request.getServerPort()+"/"+url;
+  }
 
   /* 获取语言 */
   public String GetLang(String lang, String action, Object... args) {
