@@ -22,6 +22,7 @@ public class ControllerBase extends Base {
     }
     // 调用属性
     try {
+      @SuppressWarnings("null")
       Field field = clazz.getField(action);
       try {
         // 获取值
