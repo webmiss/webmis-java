@@ -80,6 +80,7 @@ webmis-java/
 │    ├── config                           // 配置文件
 │    ├── core
 │    │    ├── Base.java                  // 基础类
+│    │    ├── ControllerBase.java        // 基础控制器
 │    │    ├── GlobalCorsConfig.java      // 跨域配置
 │    │    ├── Model.java                 // 基础模型
 │    │    ├── MySQLConnectionPool.java   // MySQL 连接池
