@@ -107,7 +107,8 @@ public class Redis  extends Base {
   /* 获取 */
   public String Get(String key) {
     if (this.conn == null) return "";
-    return this.conn.sync().get(key);
+    String res = this.conn.sync().get(key);
+    return res == null?"":res;
   }
 
   /* 删除 */

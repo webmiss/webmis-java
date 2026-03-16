@@ -2,7 +2,7 @@ package vip.webmis.mvc.modules.api;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import vip.webmis.mvc.core.Base;
+import vip.webmis.mvc.core.ControllerBase;
 import vip.webmis.mvc.core.Redis;
 import vip.webmis.mvc.models.User;
 
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RestController
 @Controller("ApiIndex")
 @RequestMapping("/api")
-public class Index extends Base {
+public class Index extends ControllerBase {
   
   /* 首页 */
   @RequestMapping(name="", produces="application/json;charset=UTF-8")
@@ -35,7 +35,7 @@ public class Index extends Base {
     HashMap<String,Object> res = new HashMap<String,Object>();
     res.put("code",0);
     res.put("msg","Java Api");
-    return res;
+    return GetJSON(res);
   }
 
 }

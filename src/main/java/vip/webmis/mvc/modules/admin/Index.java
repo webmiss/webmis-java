@@ -31,6 +31,7 @@ public class Index extends ControllerBase {
   /* 软件升级 */
   @RequestMapping(value="index/version", produces="application/json;charset=UTF-8")
   public Map<String, Object> version(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json) {
+    ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
     // 参数
     String os = (String) JsonName(json, "os");
@@ -41,7 +42,7 @@ public class Index extends ControllerBase {
       res = new HashMap<String,Object>();
       res.put("code", 4000);
       res.put("msg", "["+os+"]该操作系统不支持更新!");
-      return GetJSON(res, params.get("lang"));
+      return GetJSON(res);
     }
     // 数据
     Integer size = 0;
@@ -62,12 +63,13 @@ public class Index extends ControllerBase {
     res = new HashMap<String,Object>();
     res.put("code", 0);
     res.put("data", data);
-    return GetJSON(res, params.get("lang"));
+    return GetJSON(res);
   }
 
   /* 法定假期 */
   @RequestMapping(value="index/holiday", produces="application/json;charset=UTF-8")
   public Map<String, Object> holiday(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json) {
+    ControllerBase.lang = params.get("lang");
     HashMap<String,Object> res;
     // 参数
     String date = (String) JsonName(json, "date");
@@ -254,7 +256,7 @@ public class Index extends ControllerBase {
     res = new HashMap<String,Object>();
     res.put("code", 0);
     res.put("data", holiday.containsKey(date)?holiday.get(date):"");
-    return GetJSON(res, params.get("lang"));
+    return GetJSON(res);
   }
 
 }

@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 /* 控制器 */
 public class ControllerBase extends Base {
 
+  public static String lang = "en_US";
+
   /* 资源地址 */
   public String BaseUrl(HttpServletRequest request, String url) {
     String http = "http";
@@ -16,7 +18,7 @@ public class ControllerBase extends Base {
   }
 
   /* 获取语言 */
-  public String GetLang(String lang, String action, Object... args) {
+  public String GetLang(String action, Object... args) {
     lang = !lang.equals("")?lang.toLowerCase():"en_us";
     String className = "vip.webmis.mvc.config.langs."+lang;
     // 反射
@@ -49,13 +51,10 @@ public class ControllerBase extends Base {
 
   /* 返回JSON */
   public Map<String, Object> GetJSON(Map<String, Object> data) {
-    return GetJSON(data, "en_US");
-  }
-  public Map<String, Object> GetJSON(Map<String, Object> data, String lang) {
     // 语言
     if(data.get("code")!=null && data.get("msg")==null) {
       lang = lang.equals("")?"en_US":lang;
-      String msg = GetLang(lang, "code_"+data.get("code"));
+      String msg = GetLang("code_"+data.get("code"), lang);
       data.put("msg", msg);
     }
     return data;
