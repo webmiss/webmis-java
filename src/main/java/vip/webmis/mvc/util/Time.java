@@ -4,7 +4,7 @@ package vip.webmis.mvc.util;
 public class Time {
 
   /* Time */
-  public static Integer time() {
+  public static Integer Time() {
     return (int) (System.currentTimeMillis()/1000);
   }
   

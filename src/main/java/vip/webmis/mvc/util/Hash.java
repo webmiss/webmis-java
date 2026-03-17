@@ -7,7 +7,7 @@ import java.security.NoSuchAlgorithmException;
 public class Hash {
 
   /* MD5 */
-  public static String md5(String str) {
+  public static String Md5(String str) {
     try {
       MessageDigest md = MessageDigest.getInstance("MD5");
       byte[] bytes = md.digest(str.getBytes()); // 加密

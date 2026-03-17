@@ -18,6 +18,7 @@ public class Model extends Base {
   public static MySQLConnectionPool pool;           // 连接池
   public Connection conn;                           // 连接
   private final String name = "Model";              // 名称
+  private String db = "default";                    // 数据库
   private String table = "";                        // 数据表
   private String columns = "*";                     // 字段
   private String where = "";                        // 条件
@@ -38,6 +39,7 @@ public class Model extends Base {
     return this.DBConn("default");
   } 
   public Connection DBConn(String name) {
+    this.db = name;
     // 配置
     Map<String, Object> config = new Db().Config(name);
     int InitSize = (Integer)config.get("poolInitSize");
@@ -226,6 +228,9 @@ public class Model extends Base {
       param = (List<Object>)res[1];
       if(sql.equals("")) return new ArrayList<>();
     }
+    // 连接
+    if(this.conn==null) DBConn(this.db);
+    // 执行
     PreparedStatement ps = this.Exec(this.conn, sql, param);
     if(ps == null) return new ArrayList<>();
     List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
@@ -245,6 +250,9 @@ public class Model extends Base {
       param = (List<Object>)res[1];
       if(sql.equals("")) return new HashMap<>();
     }
+    // 连接
+    if(this.conn==null) DBConn(this.db);
+    // 执行
     PreparedStatement ps = this.Exec(this.conn, sql, param);
     if(ps == null) return new HashMap<>();
     List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
@@ -349,6 +357,9 @@ public class Model extends Base {
       param = (List<Object>)res[1];
     }
     try {
+      // 连接
+      if(this.conn==null) DBConn(this.db);
+      // 执行
       PreparedStatement ps = this.Exec(this.conn, sql, param, false);
       this.nums = ps.executeUpdate();
       ResultSet rs = ps.getGeneratedKeys();
@@ -417,6 +428,9 @@ public class Model extends Base {
       param = (List<Object>)res[1];
     }
     try {
+      // 连接
+      if(this.conn==null) DBConn(this.db);
+      // 执行
       PreparedStatement ps = this.Exec(this.conn, sql, param, false);
       this.nums = ps.executeUpdate();
       ps.close();
@@ -463,6 +477,9 @@ public class Model extends Base {
       param = (List<Object>)res[1];
     }
     try {
+      // 连接
+      if(this.conn==null) DBConn(this.db);
+      // 执行
       PreparedStatement ps = this.Exec(this.conn, sql, param, false);
       this.nums = ps.executeUpdate();
       ps.close();
