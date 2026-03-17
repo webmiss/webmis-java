@@ -39,6 +39,7 @@ public class Model extends Base {
     return this.DBConn("default");
   } 
   public Connection DBConn(String name) {
+    // 默认值
     this.db = name;
     // 配置
     Map<String, Object> config = new Db().Config(name);
@@ -221,6 +222,7 @@ public class Model extends Base {
     return this.Find("");
   }
   public List<HashMap<String,Object>> Find(String sql, Object... args) {
+    // SQL
     List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       Object[] res = this.SelectSQL();
@@ -242,6 +244,7 @@ public class Model extends Base {
     return this.FindFirst("");
   }
   public Map<String,Object> FindFirst(String sql, Object... args) {
+    // SQL
     List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       this.Limit("0", "1");
@@ -349,6 +352,7 @@ public class Model extends Base {
     return this.Insert("");
   }
   public Integer Insert(String sql, Object... args) {
+    // SQL
     List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       Object[] res = this.InsertSQL();
@@ -420,6 +424,7 @@ public class Model extends Base {
     return this.Update("");
   }
   public Boolean Update(String sql, Object... args) {
+    // SQL
     List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       Object[] res = this.UpdateSQL();
@@ -469,6 +474,7 @@ public class Model extends Base {
     return this.Delete("");
   }
   public Boolean Delete(String sql, Object... args) {
+    // SQL
     List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
       Object[] res = this.DeleteSQL();
