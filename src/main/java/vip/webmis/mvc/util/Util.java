@@ -1,5 +1,11 @@
 package vip.webmis.mvc.util;
 
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /* 常用工具 */
 public class Util {
 
@@ -26,6 +32,40 @@ public class Util {
   /* Upper */
   public static String Upper(String str) {
     return str.toUpperCase();
+  }
+
+  /* Explode */
+  public static String[] Explode(String str, String sep) {
+    return str.split(sep);
+  }
+
+  /* Implode */
+  public static String Implode(String[] arr, String sep) {
+    return String.join(sep, arr);
+  }
+
+  /* JsonEncode */
+  public static String JsonEncode(Map<String, Object> data) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    String json;
+    try {
+      json = objectMapper.writeValueAsString(data);
+    } catch (JsonProcessingException e) {
+      return null;
+    }
+    return json;
+  }
+
+  /* JsonDecode */
+  public static Map<String, Object> JsonDecode(String json) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    Map<String, Object> map;
+    try {
+      map = objectMapper.readValue(json, Map.class);
+    } catch (JsonProcessingException e) {
+      return null;
+    }
+    return map;
   }
   
 }

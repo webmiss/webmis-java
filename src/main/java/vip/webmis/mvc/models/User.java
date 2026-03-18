@@ -7,7 +7,7 @@ public class User extends Model {
 
   /* 构造函数 */
   public User() {
-    this.DBConn();
+    this.DBConn("default");
     this.Table("user");
   }
 

@@ -15,6 +15,7 @@ import vip.webmis.mvc.core.ControllerBase;
 import vip.webmis.mvc.core.Redis;
 import vip.webmis.mvc.librarys.Safety;
 import vip.webmis.mvc.models.SysRole;
+import vip.webmis.mvc.service.TokenAdmin;
 import vip.webmis.mvc.util.Hash;
 import vip.webmis.mvc.util.Time;
 import vip.webmis.mvc.util.Util;
@@ -145,6 +146,7 @@ public class User extends ControllerBase {
       Map<String, Object> d1 = m1.FindFirst();
       if(!d1.isEmpty()) perm = (String) d1.get("perm");
     }
+    TokenAdmin.SavePerm(String.valueOf(data.get("id")), perm);
     Print("perm", perm, isPasswd);
     // 返回
     res = new HashMap<String,Object>();

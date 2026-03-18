@@ -35,12 +35,9 @@ public class Model extends Base {
   private Integer nums = 0;                         // 影响行数
 
   /* 获取连接 */
-  public Connection DBConn() {
-    return this.DBConn("default");
-  } 
   public Connection DBConn(String name) {
     // 默认值
-    this.db = name;
+    this.db = name==""?"default":name;
     // 配置
     Map<String, Object> config = new Db().Config(name);
     int InitSize = (Integer)config.get("poolInitSize");

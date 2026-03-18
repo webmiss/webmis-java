@@ -7,7 +7,7 @@ public class SysRole extends Model {
 
   /* 构造函数 */
   public SysRole() {
-    this.DBConn();
+    this.DBConn("default");
     this.Table("sys_role");
   }
   
