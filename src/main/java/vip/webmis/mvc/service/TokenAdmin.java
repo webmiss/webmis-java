@@ -1,6 +1,5 @@
 package vip.webmis.mvc.service;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,6 +55,14 @@ public class TokenAdmin extends Base {
     // 验证动作
     Integer permVal = 0;
     Integer actionVal = (Integer) perm.get(id);
+    Map<String, Object> permArr = Util.JsonDecode(data.get("action").toString());
+    for(Map.Entry<String, Object> entry: permArr.entrySet()) {
+      if(entry.getValue().equals(action)) {
+        permVal = (Integer) entry.getValue();
+        break;
+      }
+    }
+    if((actionVal&permVal)==0) return "无权访问动作!";
     return "";
   }
 
@@ -93,7 +100,7 @@ public class TokenAdmin extends Base {
   /* 生成 */
   public static String Create(Map<String, Object> data) {
     // 登录时间
-    data.put("l_time", Time.Date("Y-m-d H:i:s"));
+    data.put("l_time", Time.Date("yyyy-MM-dd HH:mm:ss"));
     String token = Safety.Encode(data);
     // 缓存Token
     String key = Env.admin_token_prefix+"_token_"+data.get("uid");
@@ -105,12 +112,12 @@ public class TokenAdmin extends Base {
 
   /* 解析 */
   public static Map<String, Object> Token(String token) {
-    Map<String, Object> tData = Safety.Decode(token);
-    if(tData==null) return null;
+    Map<String, Object> data = Safety.Decode(token);
+    if(data==null) return null;
     // 过期时间
     Redis redis = new Redis();
-    tData.put("time", redis.Ttl(Env.admin_token_prefix+"_token_"+tData.get("uid")));
-    return tData;
+    data.put("time", redis.Ttl(Env.admin_token_prefix+"_token_"+data.get("uid")));
+    return data;
   }
   
 }

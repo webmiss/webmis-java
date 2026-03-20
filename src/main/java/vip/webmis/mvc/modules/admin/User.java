@@ -15,6 +15,7 @@ import vip.webmis.mvc.core.ControllerBase;
 import vip.webmis.mvc.core.Redis;
 import vip.webmis.mvc.librarys.Safety;
 import vip.webmis.mvc.models.SysRole;
+import vip.webmis.mvc.service.Data;
 import vip.webmis.mvc.service.TokenAdmin;
 import vip.webmis.mvc.util.Hash;
 import vip.webmis.mvc.util.Time;
@@ -147,11 +148,93 @@ public class User extends ControllerBase {
       if(!d1.isEmpty()) perm = (String) d1.get("perm");
     }
     TokenAdmin.SavePerm(String.valueOf(data.get("id")), perm);
-    Print("perm", perm, isPasswd);
+    // 登录时间
+    Integer ltime = Time.Time();
+    Map<String,Object> d = new HashMap<String,Object>();
+    d.put("ltime", ltime);
+    m = new vip.webmis.mvc.models.User();
+    m.Set(d);
+    m.Where("id=?", data.get("id"));
+    m.Update();
+    // Token
+    Map<String,Object> tData = new HashMap<String,Object>();
+    tData.put("uid", data.get("id").toString());
+    tData.put("uname", uname);
+    tData.put("name", data.get("name"));
+    tData.put("type", data.get("type"));
+    tData.put("isPasswd", isPasswd);
+    tData.put("brand", data.get("brand"));
+    tData.put("shop", data.get("shop"));
+    tData.put("partner", data.get("partner"));
+    tData.put("partner_in", data.get("partner_in"));
+    String token = TokenAdmin.Create(tData);
+    // 用户信息
+    Map<String,Object> uinfo = new HashMap<String,Object>();
+    uinfo.put("uid", data.get("id").toString());
+    uinfo.put("uname", uname);
+    uinfo.put("tel", data.get("tel"));
+    uinfo.put("email", data.get("email"));
+    uinfo.put("ltime", Time.Date("yyyy-MM-dd HH:mm:ss", ltime));
+    uinfo.put("type", data.get("type"));
+    uinfo.put("nickname", data.get("nickname"));
+    uinfo.put("department", data.get("department"));
+    uinfo.put("position", data.get("position"));
+    uinfo.put("name", data.get("name"));
+    uinfo.put("gender", data.get("gender"));
+    uinfo.put("birthday", data.get("birthday"));
+    uinfo.put("img", Data.Img(data.get("img").toString()));
+    uinfo.put("signature", data.get("signature"));
     // 返回
+    data = new HashMap<String,Object>();
+    data.put("token", token);
+    data.put("uinfo", uinfo);
+    data.put("isPasswd", isPasswd);
     res = new HashMap<String,Object>();
     res.put("code", 0);
-    res.put("data", "");
+    res.put("data", data);
+    return GetJSON(res);
+  }
+
+  /* Token验证 */
+  @RequestMapping(value="user/token", produces="application/json;charset=UTF-8")
+  public Map<String, Object> Token(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
+    ControllerBase.lang = params.get("lang");
+    Map<String,Object> res;
+    // 参数
+    String token = (String) JsonName(json, "token");
+    Boolean is_uinfo = (Boolean) JsonName(json, "uinfo");
+    // 验证
+    String msg = TokenAdmin.Verify(token, "");
+    if(msg!="") {
+      res = new HashMap<String,Object>();
+      res.put("code", 4001);
+      return GetJSON(res);
+    }
+    Map<String,Object> tData = TokenAdmin.Token(token);
+    // 用户信息
+    Map<String,Object> uinfo = new HashMap<String,Object>();
+    if(is_uinfo) {
+      vip.webmis.mvc.models.User m = new vip.webmis.mvc.models.User();
+      m.Table("user as a");
+      m.LeftJoin("user_info as b", "a.id=b.uid");
+      m.Columns(
+        "FROM_UNIXTIME(a.ltime) as ltime", "a.tel", "a.email",
+        "b.type", "b.nickname", "b.department", "b.position", "b.name", "b.gender", "b.img", "b.signature", "FROM_UNIXTIME(b.birthday, '%Y-%m-%d') as birthday"
+      );
+      m.Where("a.id=?", tData.get("uid"));
+      uinfo = m.FindFirst();
+      uinfo.put("uid", String.valueOf(tData.get("uid")));
+      uinfo.put("uname", tData.get("uname"));
+      uinfo.put("img", Data.Img(String.valueOf(uinfo.get("img"))));
+    }
+    // 返回
+    Map<String,Object> data = new HashMap<String,Object>();
+    data.put("token_time", tData.get("time"));
+    data.put("uinfo", uinfo);
+    data.put("isPasswd", tData.get("time"));
+    res = new HashMap<String,Object>();
+    res.put("code", 0);
+    res.put("data", data);
     return GetJSON(res);
   }
   

@@ -3,7 +3,6 @@ package vip.webmis.mvc.util;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /* 常用工具 */
@@ -57,11 +56,11 @@ public class Util {
   }
 
   /* JsonDecode */
-  public static Map<String, Object> JsonDecode(String json) {
+  public static Map<String, Object> JsonDecode(String jsonStr) {
     ObjectMapper objectMapper = new ObjectMapper();
     Map<String, Object> map;
     try {
-      map = objectMapper.readValue(json, Map.class);
+      map = objectMapper.readValue(jsonStr, Map.class);
     } catch (JsonProcessingException e) {
       return null;
     }
