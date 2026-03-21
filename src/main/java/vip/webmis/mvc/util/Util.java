@@ -1,5 +1,6 @@
 package vip.webmis.mvc.util;
 
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,6 +55,17 @@ public class Util {
     }
     return json;
   }
+  /* JsonEncodeArr */
+  public static String JsonEncodeArr(List<Map<String, Object>> data) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    String json;
+    try {
+      json = objectMapper.writeValueAsString(data);
+    } catch (JsonProcessingException e) {
+      return null;
+    }
+    return json;
+  }
 
   /* JsonDecode */
   public static Map<String, Object> JsonDecode(String jsonStr) {
@@ -65,6 +77,17 @@ public class Util {
       return null;
     }
     return map;
+  }
+  /* JsonDecodeArr */
+  public static List<Map<String, Object>> JsonDecodeArr(String jsonStr) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    List<Map<String, Object>> list;
+    try {
+      list = objectMapper.readValue(jsonStr, List.class);
+    } catch (JsonProcessingException e) {
+      return null;
+    }
+    return list;
   }
   
 }

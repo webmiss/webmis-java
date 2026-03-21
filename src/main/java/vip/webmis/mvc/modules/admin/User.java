@@ -231,7 +231,7 @@ public class User extends ControllerBase {
     Map<String,Object> data = new HashMap<String,Object>();
     data.put("token_time", tData.get("time"));
     data.put("uinfo", uinfo);
-    data.put("isPasswd", tData.get("time"));
+    data.put("isPasswd", tData.get("isPasswd"));
     res = new HashMap<String,Object>();
     res.put("code", 0);
     res.put("data", data);
