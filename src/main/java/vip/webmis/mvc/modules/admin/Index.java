@@ -2,9 +2,14 @@ package vip.webmis.mvc.modules.admin;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import vip.webmis.mvc.core.ControllerBase;
+import vip.webmis.mvc.models.ErpBasePartner;
+import vip.webmis.mvc.service.TokenAdmin;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Controller;
@@ -17,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller("AdminIndex")
 @RequestMapping("/admin")
 public class Index extends ControllerBase {
+
+  private static Map<String, Map<String, Object>> partner = null;    // 主仓
   
   /* 首页 */
   @RequestMapping(produces="application/json;charset=UTF-8")
@@ -256,6 +263,38 @@ public class Index extends ControllerBase {
     res = new HashMap<String,Object>();
     res.put("code", 0);
     res.put("data", holiday.containsKey(date)?holiday.get(date):"");
+    return GetJSON(res);
+  }
+
+  /* 选项 */
+  @RequestMapping(value="index/get_select", produces="application/json;charset=UTF-8")
+  public Map<String, Object> GetSelect(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
+    ControllerBase.lang = params.get("lang");
+    Map<String,Object> res;
+    // 参数
+    String token = (String) JsonName(json, "token");
+    // 验证
+    String msg = TokenAdmin.Verify(token, "");
+    if(msg!="") {
+      res = new HashMap<String,Object>();
+      res.put("code", 4001);
+      return GetJSON(res);
+    }
+    // 仓库
+    partner = ErpBasePartner.GetList(new String[]{"type=0", "status=1"});
+    List<HashMap<String, Object>> partner_name = new ArrayList<HashMap<String, Object>>();
+    partner.forEach((k, v)->{
+      HashMap<String, Object> tmp = new HashMap<String, Object>();
+      tmp.put("label", v.get("name"));
+      tmp.put("value", k);
+      partner_name.add(tmp);
+    });
+    // 返回
+    Map<String,Object> data = new HashMap<String,Object>();
+    data.put("partner_name", partner_name);
+    res = new HashMap<String,Object>();
+    res.put("code", 0);
+    res.put("data", data);
     return GetJSON(res);
   }
 

@@ -35,12 +35,12 @@ public class Util {
   }
 
   /* Explode */
-  public static String[] Explode(String str, String sep) {
+  public static String[] Explode(String sep, String str) {
     return str.split(sep);
   }
 
   /* Implode */
-  public static String Implode(String[] arr, String sep) {
+  public static String Implode(String sep, String[] arr) {
     return String.join(sep, arr);
   }
 

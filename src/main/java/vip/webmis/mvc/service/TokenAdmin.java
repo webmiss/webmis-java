@@ -38,10 +38,10 @@ public class TokenAdmin extends Base {
     }
     // URL权限
     if(urlPerm.equals("")) return "";
-    String[] arr = Util.Explode(urlPerm, "/");
-    String action = Util.Explode(arr[arr.length-1], "?")[0];
+    String[] arr = Util.Explode("/", urlPerm);
+    String action = Util.Explode("?", arr[arr.length-1])[0];
     arr = Arrays.copyOf(arr, arr.length-1);
-    String controller = Util.Implode(arr, "/");
+    String controller = Util.Implode("/", arr);
     // 查询菜单
     SysMenu m = new SysMenu();
     m.Columns("id", "action");
@@ -89,9 +89,9 @@ public class TokenAdmin extends Base {
     if(permStr==null) return arr;
     // 拆分
     String[] tmp;
-    String[] perm = Util.Explode(permStr, " ");
+    String[] perm = Util.Explode(" ", permStr);
     for(String p: perm) {
-      tmp = Util.Explode(p, ":");
+      tmp = Util.Explode(":", p);
       arr.put(tmp[0], tmp[1]);
     }
     return arr;
