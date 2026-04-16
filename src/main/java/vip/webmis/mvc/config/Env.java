@@ -18,9 +18,5 @@ public class Env {
   public static final Integer api_token_time = 7*24*3600;               // 有效时长(7天)
   public static final Boolean api_token_auto = true;                    // 自动续期
   public static final Boolean api_token_sso = true;                     // 单点登录
-  public static final String supplier_token_prefix = "webmisSupplier";  // 前缀-Supplier
-  public static final Integer supplier_token_time = 7*24*3600;          // 有效时长(7天)
-  public static final Boolean supplier_token_auto = true;               // 自动续期
-  public static final Boolean supplier_token_sso = true;                // 单点登录
   
 }

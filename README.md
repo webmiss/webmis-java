@@ -16,7 +16,7 @@ $ cd webmis-java
 # Linux、MacOS
 ./bash install
 
-# Windows 11
+# Windows 11 (自动环境安装和配置)
 .\cmd install
 ```
 
@@ -68,7 +68,6 @@ server {
         add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization';
         if ($request_method = 'OPTIONS') { return 204; }
     }
-
 }
 ```
 
@@ -98,8 +97,8 @@ webmis-java/
 │    ├── static                           // 静态资源
 │    ├── templates                        // 视图模板
 │    └── application.properties           // 项目配置文件
-├── bash                                   // Linux/MacOS 启动脚本
-├── cmd.bat                                // Windows 启动脚本
+├── bash                                   // Linux/MacOS 脚本
+├── cmd.bat                                // Windows 脚本
 ├── pom.xml                                // Maven 配置文件
 └── run.py                                 // Web启动文件
 ```

@@ -102,7 +102,7 @@ public class User extends ControllerBase {
     m.Columns(
       "a.id", "a.status", "a.password", "a.tel", "a.email",
       "b.type", "b.nickname", "b.department", "b.position", "b.name", "b.gender", "FROM_UNIXTIME(b.birthday, '%Y-%m-%d') as birthday", "b.img", "b.signature",
-      "c.role", "c.perm", "c.brand", "c.shop", "c.partner", "c.partner_in"
+      "c.role", "c.perm"
     );
     m.Where(where);
     Map<String, Object> data = m.FindFirst();
@@ -163,10 +163,6 @@ public class User extends ControllerBase {
     tData.put("name", data.get("name"));
     tData.put("type", data.get("type"));
     tData.put("isPasswd", isPasswd);
-    tData.put("brand", data.get("brand"));
-    tData.put("shop", data.get("shop"));
-    tData.put("partner", data.get("partner"));
-    tData.put("partner_in", data.get("partner_in"));
     String token = TokenAdmin.Create(tData);
     // 用户信息
     Map<String,Object> uinfo = new HashMap<String,Object>();
