@@ -29,7 +29,7 @@ public class SysMenus extends ControllerBase {
   /* 获取菜单-权限 */
   @RequestMapping(value="sys_menus/get_menus_perm", produces="application/json;charset=UTF-8")
   public Map<String, Object> GetMenusPerm(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
-     Map<String,Object> res;
+    Map<String,Object> res;
     // 参数
     String token = (String) JsonName(json, "token");
     // 验证

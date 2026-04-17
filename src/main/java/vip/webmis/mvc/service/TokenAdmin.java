@@ -2,6 +2,7 @@ package vip.webmis.mvc.service;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import vip.webmis.mvc.config.Env;
@@ -23,7 +24,7 @@ public class TokenAdmin extends Base {
     Map<String, Object> tData = Safety.Decode(token);
     if(tData==null) return "Token验证失败!";
     // 是否过期
-    String uid = (String) tData.get("uid");
+    String uid = String.valueOf(tData.get("uid"));
     String key = Env.admin_token_prefix+"_token_"+uid;
     Redis redis = new Redis();
     Long time = redis.Ttl(key);
@@ -49,16 +50,16 @@ public class TokenAdmin extends Base {
     Map<String, Object> data = m.FindFirst();
     if(data.isEmpty()) return "菜单验证无效!";
     // 验证菜单
-    String id = (String) data.get("id");
+    String id = String.valueOf(data.get("id"));
     Map<String, Object> perm = GetPerm(token);
     if(!perm.containsKey(id)) return "无权访问菜单!";
     // 验证动作
     Integer permVal = 0;
-    Integer actionVal = (Integer) perm.get(id);
-    Map<String, Object> permArr = Util.JsonDecode(data.get("action").toString());
-    for(Map.Entry<String, Object> entry: permArr.entrySet()) {
-      if(entry.getValue().equals(action)) {
-        permVal = (Integer) entry.getValue();
+    Integer actionVal = Integer.parseInt(String.valueOf(perm.get(id)));
+    List<Map<String, Object>> permArr = Util.JsonDecodeArr(String.valueOf(data.get("action")));
+    for(Map<String, Object> entry: permArr) {
+      if(entry.get("action").equals(action)) {
+        permVal =  Integer.parseInt(String.valueOf(entry.get("perm")));
         break;
       }
     }
@@ -83,7 +84,7 @@ public class TokenAdmin extends Base {
     Map<String, Object> tData = Safety.Decode(token);
     if(tData==null) return arr;
     // 权限
-    String uid = (String) tData.get("uid");
+    String uid = String.valueOf(tData.get("uid"));
     Redis redis = new Redis();
     String permStr = redis.Get(Env.admin_token_prefix+"_perm_"+uid);
     if(permStr==null) return arr;

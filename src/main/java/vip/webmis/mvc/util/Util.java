@@ -2,6 +2,7 @@ package vip.webmis.mvc.util;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +13,10 @@ public class Util {
   /* Trim */
   public static String Trim(String str) {
     return str.trim();
+  }
+  public static String Trim(String str, String cutset) {
+    if (str == null || str.isEmpty()) return "";
+    return str.replaceAll("^[" + cutset + "]+|[" + cutset + "]+$", "");
   }
 
   /* Ltrim */
@@ -36,7 +41,7 @@ public class Util {
 
   /* Explode */
   public static String[] Explode(String sep, String str) {
-    return str.split(sep);
+    return str.split(Pattern.quote(sep));
   }
 
   /* Implode */

@@ -8,6 +8,7 @@ public class Env {
   public static final String key = "e4b99adec618e653400966be536c45f8";  // 加密密钥
   public static final String password = "123456";                       // 默认密码
   // 资源
+  public static final String root_dir = "public/";                      // 根目录
   public static final String img_url = "https://java.webmis.vip/";
   // Token
   public static final String admin_token_prefix = "webmisAdmin";        // 前缀-Admin
