@@ -1,7 +1,9 @@
 package vip.webmis.mvc.util;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -93,6 +95,17 @@ public class Util {
       return null;
     }
     return list;
+  }
+
+  /* ArrayMerge */
+  public static HashMap<String, Object> ArrayMerge(HashMap<String, Object>... arrays) {
+    HashMap<String, Object> res = new HashMap<String, Object>();
+    for(HashMap<String, Object> arr:arrays){
+      for(Entry<String, Object> entry:arr.entrySet()){
+        res.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return res;
   }
   
 }

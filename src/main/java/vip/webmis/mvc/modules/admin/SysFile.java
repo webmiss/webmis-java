@@ -4,16 +4,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import vip.webmis.mvc.config.Env;
 import vip.webmis.mvc.core.ControllerBase;
 import vip.webmis.mvc.librarys.FileEo;
+import vip.webmis.mvc.librarys.Upload;
 import vip.webmis.mvc.service.TokenAdmin;
 import vip.webmis.mvc.util.Time;
 
@@ -30,7 +33,7 @@ public class SysFile extends ControllerBase {
   public Map<String, Object> List(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
-     // 参数
+    // 参数
     String token = (String) JsonName(json, "token");
     String path = (String) JsonName(json, "path");
     // 验证
@@ -64,7 +67,7 @@ public class SysFile extends ControllerBase {
   public Map<String, Object> Mkdir(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
-     // 参数
+    // 参数
     String token = (String) JsonName(json, "token");
     String path = (String) JsonName(json, "path");
     String name = (String) JsonName(json, "name");
@@ -98,7 +101,7 @@ public class SysFile extends ControllerBase {
   public Map<String, Object> Rename(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
-     // 参数
+    // 参数
     String token = (String) JsonName(json, "token");
     String path = (String) JsonName(json, "path");
     String name = (String) JsonName(json, "name");
@@ -133,7 +136,7 @@ public class SysFile extends ControllerBase {
   public Map<String, Object> Remove(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
-     // 参数
+    // 参数
     String token = (String) JsonName(json, "token");
     String path = (String) JsonName(json, "path");
     ArrayList<String> data = (ArrayList<String>) JsonName(json, "data");
@@ -159,5 +162,59 @@ public class SysFile extends ControllerBase {
     res.put("code",0);
     return GetJSON(res);
   }
-  
+
+  /* 上传 */
+  @RequestMapping(value="sys_file/upload", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
+  public Map<String, Object> Upload(@RequestParam Map<String, String> params, HttpServletRequest request, @RequestParam("file") MultipartFile file) {
+    ControllerBase.lang = params.get("lang");
+    Map<String,Object> res;
+    // // 参数
+    String token = (String) params.get("token");
+    String path = (String) params.get("path");
+    // 验证
+    String msg = TokenAdmin.Verify(token, request.getRequestURI());
+    if(msg!="") {
+      res = new HashMap<String,Object>();
+      res.put("code", 4001);
+      return GetJSON(res);
+    }
+    if(path.isEmpty()) {
+      res = new HashMap<String,Object>();
+      res.put("code", 4000);
+      return GetJSON(res);
+    }
+    // 数据
+    HashMap<String, Object> param = new HashMap<String, Object>();
+    param.put("path", dirRoot+path);
+    param.put("bind", null);
+    String img = Upload.File(file, param);
+    if(img.isEmpty()) {
+      res = new HashMap<String,Object>();
+      res.put("code", 5000);
+      res.put("msg", "上传失败!");
+      return GetJSON(res);
+    }
+    // 返回
+    res = new HashMap<String,Object>();
+    res.put("code",0);
+    return GetJSON(res);
+  }
+
+  /* 下载 */
+  @RequestMapping(value="sys_file/down", produces="application/json;charset=UTF-8")
+  public byte[] Down(@RequestBody Map<String, Object> json, HttpServletRequest request) {
+    // 参数
+    String token = (String) JsonName(json, "token");
+    String path = (String) JsonName(json, "path");
+    String filename = (String) JsonName(json, "filename");
+    // 验证
+    String msg = TokenAdmin.Verify(token, request.getRequestURI());
+    if(msg!="") return null;
+    if(path.isEmpty() || filename.isEmpty()) return null;
+    // 数据
+    FileEo.Root = Env.root_dir + dirRoot;
+    byte[] data = FileEo.Bytes(path+filename);
+    // 返回
+    return data;
+  }
 }

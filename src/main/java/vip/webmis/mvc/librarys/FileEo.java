@@ -190,12 +190,12 @@ public class FileEo {
   }
 
   /* 上传 */
-  public static boolean Upload(MultipartFile tmp, String to){
+  public static boolean Upload(MultipartFile file, String to){
     to = Root+to;
     try {
       String root = System.getProperty("user.dir")+"/";
       File f = new File(root+to);
-      tmp.transferTo(f);
+      file.transferTo(f);
       return true;
     }catch (IOException e){
       return false;
