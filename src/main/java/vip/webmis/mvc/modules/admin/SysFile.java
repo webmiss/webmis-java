@@ -34,8 +34,8 @@ public class SysFile extends ControllerBase {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
     // 参数
-    String token = (String) JsonName(json, "token");
-    String path = (String) JsonName(json, "path");
+    String token = String.valueOf(JsonName(json, "token"));
+    String path = String.valueOf(JsonName(json, "path"));
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
@@ -68,9 +68,9 @@ public class SysFile extends ControllerBase {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
     // 参数
-    String token = (String) JsonName(json, "token");
-    String path = (String) JsonName(json, "path");
-    String name = (String) JsonName(json, "name");
+    String token = String.valueOf(JsonName(json, "token"));
+    String path = String.valueOf(JsonName(json, "path"));
+    String name = String.valueOf(JsonName(json, "name"));
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
@@ -102,10 +102,10 @@ public class SysFile extends ControllerBase {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
     // 参数
-    String token = (String) JsonName(json, "token");
-    String path = (String) JsonName(json, "path");
-    String name = (String) JsonName(json, "name");
-    String rename = (String) JsonName(json, "rename");
+    String token = String.valueOf(JsonName(json, "token"));
+    String path = String.valueOf(JsonName(json, "path"));
+    String name = String.valueOf(JsonName(json, "name"));
+    String rename = String.valueOf(JsonName(json, "rename"));
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
@@ -137,8 +137,8 @@ public class SysFile extends ControllerBase {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
     // 参数
-    String token = (String) JsonName(json, "token");
-    String path = (String) JsonName(json, "path");
+    String token = String.valueOf(JsonName(json, "token"));
+    String path = String.valueOf(JsonName(json, "path"));
     ArrayList<String> data = (ArrayList<String>) JsonName(json, "data");
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
@@ -169,8 +169,8 @@ public class SysFile extends ControllerBase {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
     // // 参数
-    String token = (String) params.get("token");
-    String path = (String) params.get("path");
+    String token = String.valueOf(params.get("token"));
+    String path = String.valueOf(params.get("path"));
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
@@ -204,9 +204,9 @@ public class SysFile extends ControllerBase {
   @RequestMapping(value="sys_file/down", produces="application/json;charset=UTF-8")
   public byte[] Down(@RequestBody Map<String, Object> json, HttpServletRequest request) {
     // 参数
-    String token = (String) JsonName(json, "token");
-    String path = (String) JsonName(json, "path");
-    String filename = (String) JsonName(json, "filename");
+    String token = String.valueOf(JsonName(json, "token"));
+    String path = String.valueOf(JsonName(json, "path"));
+    String filename = String.valueOf(JsonName(json, "filename"));
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") return null;

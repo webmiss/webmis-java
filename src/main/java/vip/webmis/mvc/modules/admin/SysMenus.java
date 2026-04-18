@@ -31,7 +31,7 @@ public class SysMenus extends ControllerBase {
   public Map<String, Object> GetMenusPerm(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     Map<String,Object> res;
     // 参数
-    String token = (String) JsonName(json, "token");
+    String token = String.valueOf(JsonName(json, "token"));
     // 验证
     String msg = TokenAdmin.Verify(token, "");
     if(msg!="") {

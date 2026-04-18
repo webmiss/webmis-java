@@ -33,9 +33,9 @@ public class User extends ControllerBase {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
     // 参数
-    String uname = (String) JsonName(json, "uname");
-    String passwd = (String) JsonName(json, "passwd");
-    String vcode = (String) JsonName(json, "vcode");
+    String uname = String.valueOf(JsonName(json, "uname"));
+    String passwd = String.valueOf(JsonName(json, "passwd"));
+    String vcode = String.valueOf(JsonName(json, "vcode"));
     // String vcode_url = "http://localhost:9000/admin/user/vcode/"+uname+"?"+Time.Time();
     String vcode_url = BaseUrl(request, "admin/user/vcode")+"/"+uname+"?"+Time.Time();
     // 验证
@@ -132,7 +132,7 @@ public class User extends ControllerBase {
     // 默认密码
     Boolean isPasswd = data.get("password").equals(Hash.Md5(Env.password));
     // 权限
-    String perm = (String) data.get("perm");
+    String perm = String.valueOf(data.get("perm"));
     if(perm.equals("")) {
       if(data.get("role").equals("")) {
         res = new HashMap<String,Object>();
@@ -145,7 +145,7 @@ public class User extends ControllerBase {
       m1.Columns("perm");
       m1.Where("id="+data.get("role"));
       Map<String, Object> d1 = m1.FindFirst();
-      if(!d1.isEmpty()) perm = (String) d1.get("perm");
+      if(!d1.isEmpty()) perm = String.valueOf(d1.get("perm"));
     }
     TokenAdmin.SavePerm(String.valueOf(data.get("id")), perm);
     // 登录时间
@@ -197,7 +197,7 @@ public class User extends ControllerBase {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
     // 参数
-    String token = (String) JsonName(json, "token");
+    String token = String.valueOf(JsonName(json, "token"));
     Boolean is_uinfo = (Boolean) JsonName(json, "uinfo");
     // 验证
     String msg = TokenAdmin.Verify(token, "");

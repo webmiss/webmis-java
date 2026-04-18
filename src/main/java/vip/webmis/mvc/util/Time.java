@@ -1,6 +1,9 @@
 package vip.webmis.mvc.util;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,6 +44,23 @@ public class Time {
     String javaFormat = sb.toString();
     SimpleDateFormat sdf = new SimpleDateFormat(javaFormat);
     return sdf.format(date);
+  }
+
+  /* StrToTime */
+  public static Integer StrToTime(String datetime) {
+    try {
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+      LocalDateTime dt = LocalDateTime.parse(datetime, formatter);
+      return (int) dt.atZone(ZoneId.systemDefault()).toEpochSecond();
+    } catch (Exception e) {
+      try {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDateTime dt = LocalDateTime.parse(datetime + " 00:00:00", formatter);
+        return (int) dt.atZone(ZoneId.systemDefault()).toEpochSecond();
+      } catch (Exception ex) {
+        return (int) System.currentTimeMillis()/1000;
+      }
+    }
   }
   
 }

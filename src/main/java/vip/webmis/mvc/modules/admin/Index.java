@@ -31,8 +31,8 @@ public class Index extends ControllerBase {
     ControllerBase.lang = params.get("lang");
     Map<String,Object> res;
     // 参数
-    String os = (String) JsonName(json, "os");
-    String local = (String) JsonName(json, "version");
+    String os = String.valueOf(JsonName(json, "os"));
+    String local = String.valueOf(JsonName(json, "version"));
     // 验证
     os = os.toLowerCase();
     if(!os.equals("web")) {
@@ -69,7 +69,7 @@ public class Index extends ControllerBase {
     ControllerBase.lang = params.get("lang");
     HashMap<String,Object> res;
     // 参数
-    String date = (String) JsonName(json, "date");
+    String date = String.valueOf(JsonName(json, "date"));
     String url = "https://java.webmis.vip/upload/img/holiday/";
     // 假期
     Map<String,Object> tmp;
