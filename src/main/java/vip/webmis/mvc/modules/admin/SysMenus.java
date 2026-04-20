@@ -66,7 +66,7 @@ public class SysMenus extends ControllerBase {
       List<Map<String, Object>> action = new ArrayList<>();
       String actionStr = String.valueOf(val.get("action"));
       List<Map<String, Object>> actionArr = new ArrayList<>();
-      if(!actionStr.equals("")) actionArr = Util.JsonDecodeArr(actionStr);
+      if(!actionStr.equals("")) actionArr = Util.JsonDecodeList(actionStr);
       for(Map<String, Object> v : actionArr){
         Integer permVal = Integer.valueOf(v.get("perm").toString());
         if((perm&permVal)>0) action.add(v);

@@ -2,6 +2,7 @@ package vip.webmis.mvc.modules.admin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Controller;
@@ -15,6 +16,8 @@ import vip.webmis.mvc.core.ControllerBase;
 import vip.webmis.mvc.service.TokenAdmin;
 import vip.webmis.mvc.util.Time;
 import vip.webmis.mvc.util.Util;
+
+import vip.webmis.mvc.models.User;
 
 /* 系统用户 */
 @RestController
@@ -44,13 +47,25 @@ public class SysUser extends ControllerBase {
     }
     // 条件
     String where = getWhere(data);
+    // 统计
+    User m = new User();
+    m.Table("user as a");
+    m.LeftJoin("user_info as b", "a.id=b.uid");
+    m.LeftJoin("sys_perm as c", "a.id=c.uid");
+    m.LeftJoin("sys_role as d", "c.role=d.id");
+    m.Columns("count(*) AS total");
+    m.Where(where);
+    Map<String, Object> one = m.FindFirst();
     // 数据
-    Map<String,Object> list = new HashMap<String,Object>();
+    Map<String,Object> total = new HashMap<String,Object>();
+    if(one!=null) {
+      total.put("total", Integer.valueOf(one.get("total").toString()));
+    }
     // 返回
     res = new HashMap<String,Object>();
     res.put("code",0);
     res.put("time", Time.Date("Y/m/d H:i:s"));
-    res.put("data", list);
+    res.put("data", total);
     return GetJSON(res);
   }
 
@@ -79,9 +94,27 @@ public class SysUser extends ControllerBase {
     }
     // 条件
     String where = getWhere(data);
-    Print(where);
+    // 查询
+    User m = new User();
+    m.Table("user as a");
+    m.LeftJoin("user_info as b", "a.id=b.uid");
+    m.LeftJoin("sys_perm as c", "a.id=c.uid");
+    m.LeftJoin("sys_role as d", "c.role=d.id");
+    m.Columns(
+      "a.id", "a.uname", "a.email", "a.tel", "a.status", "FROM_UNIXTIME(a.rtime, '%Y-%m-%d %H:%i:%s') as rtime", "FROM_UNIXTIME(a.ltime, '%Y-%m-%d %H:%i:%s') as ltime", "FROM_UNIXTIME(a.utime, '%Y-%m-%d %H:%i:%s') as utime",
+      "b.type", "b.nickname", "b.department", "b.position", "b.name", "b.gender", "b.img", "b.remark", "FROM_UNIXTIME(b.birthday, '%Y-%m-%d') as birthday",
+      "c.role", "c.perm",
+      "d.name as role_name"
+    );
+    m.Where(where);
+    m.Order(!order.isEmpty()?order:"a.ltime DESC");
+    m.Page(page, limit);
+    List<HashMap<String, Object>> list = m.Find();
     // 数据
-    Map<String,Object> list = new HashMap<String,Object>();
+    Print(m.GetSQL());
+    Print(page, limit);
+    Print(list);
+    Print("Order", order);
     // 返回
     res = new HashMap<String,Object>();
     res.put("code",0);
@@ -94,9 +127,13 @@ public class SysUser extends ControllerBase {
   private String getWhere(HashMap<String,Object> d) {
     ArrayList<String> where = new ArrayList<String>();
     // 时间
-    String stime = d.containsKey("stune")?String.valueOf(d.get("stime")):Time.Date("Y-m-d");
+    String stime = d.containsKey("stime")?String.valueOf(d.get("stime")):Time.Date("Y-m-d");
     Integer start = Time.StrToTime(stime+" 00:00:00");
-    where.add("stime>="+String.valueOf(start));
+    where.add("a.ltime>="+String.valueOf(start));
+    String etime = d.containsKey("etime")?String.valueOf(d.get("etime")):Time.Date("Y-m-d");
+    Integer end = Time.StrToTime(etime+" 23:59:59");
+    where.add("a.ltime<="+String.valueOf(end));
+    // 结果
     return Util.Implode(" AND ", where.toArray(new String[0]));
   }
   

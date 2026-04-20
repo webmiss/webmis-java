@@ -56,7 +56,7 @@ public class TokenAdmin extends Base {
     // 验证动作
     Integer permVal = 0;
     Integer actionVal = Integer.parseInt(String.valueOf(perm.get(id)));
-    List<Map<String, Object>> permArr = Util.JsonDecodeArr(String.valueOf(data.get("action")));
+    List<Map<String, Object>> permArr = Util.JsonDecodeList(String.valueOf(data.get("action")));
     for(Map<String, Object> entry: permArr) {
       if(entry.get("action").equals(action)) {
         permVal =  Integer.parseInt(String.valueOf(entry.get("perm")));

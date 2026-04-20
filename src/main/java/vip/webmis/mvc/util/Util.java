@@ -62,8 +62,8 @@ public class Util {
     }
     return json;
   }
-  /* JsonEncodeArr */
-  public static String JsonEncodeArr(List<Map<String, Object>> data) {
+  /* JsonEncodeList */
+  public static String JsonEncodeList(List<Map<String, Object>> data) {
     ObjectMapper objectMapper = new ObjectMapper();
     String json;
     try {
@@ -85,8 +85,8 @@ public class Util {
     }
     return map;
   }
-  /* JsonDecodeArr */
-  public static List<Map<String, Object>> JsonDecodeArr(String jsonStr) {
+  /* JsonDecodeList */
+  public static List<Map<String, Object>> JsonDecodeList(String jsonStr) {
     ObjectMapper objectMapper = new ObjectMapper();
     List<Map<String, Object>> list;
     try {

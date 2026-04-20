@@ -7,8 +7,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
+import vip.webmis.mvc.core.Base;
+
 /* 时间 */
-public class Time {
+public class Time extends Base {
 
   /* Time */
   public static Integer Time() {
@@ -48,6 +50,7 @@ public class Time {
 
   /* StrToTime */
   public static Integer StrToTime(String datetime) {
+    datetime = datetime.replace("/", "-");
     try {
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
       LocalDateTime dt = LocalDateTime.parse(datetime, formatter);
@@ -58,7 +61,7 @@ public class Time {
         LocalDateTime dt = LocalDateTime.parse(datetime + " 00:00:00", formatter);
         return (int) dt.atZone(ZoneId.systemDefault()).toEpochSecond();
       } catch (Exception ex) {
-        return (int) System.currentTimeMillis()/1000;
+        return null;
       }
     }
   }

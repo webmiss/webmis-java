@@ -225,13 +225,13 @@ public class Model extends Base {
       Object[] res = this.SelectSQL();
       sql = (String)res[0];
       param = (List<Object>)res[1];
-      if(sql.equals("")) return new ArrayList<>();
+      if(sql.equals("")) return null;
     }
     // 连接
     if(this.conn==null) DBConn(this.db);
     // 执行
     PreparedStatement ps = this.Exec(this.conn, sql, param);
-    if(ps == null) return new ArrayList<>();
+    if(ps == null) return null;
     List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
     return data;
   }
@@ -248,15 +248,15 @@ public class Model extends Base {
       Object[] res = this.SelectSQL();
       sql = (String)res[0];
       param = (List<Object>)res[1];
-      if(sql.equals("")) return new HashMap<>();
+      if(sql.equals("")) return null;
     }
     // 连接
     if(this.conn==null) DBConn(this.db);
     // 执行
     PreparedStatement ps = this.Exec(this.conn, sql, param);
-    if(ps == null) return new HashMap<>();
+    if(ps == null) return null;
     List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
-    if(data.size() == 0) return new HashMap<>();
+    if(data.size() == 0) return null;
     return data.get(0);
   }
 

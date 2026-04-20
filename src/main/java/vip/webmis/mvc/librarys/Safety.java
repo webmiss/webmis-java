@@ -1,6 +1,5 @@
 package vip.webmis.mvc.librarys;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,18 +43,18 @@ public class Safety {
   static public String Encode(Map<String,Object> param) {
     try {
       Algorithm algorithm = Algorithm.HMAC256(Env.key);
-      return JWT.create().withClaim("data", param).sign(algorithm);
+      return JWT.create().withClaim("token", param).sign(algorithm);
     } catch (JWTCreationException exception){
       return null;
     }
   }
 
   /* Base64-解密 */
-  static public HashMap<String,Object> Decode(String token) {
+  static public Map<String,Object> Decode(String token) {
     try {
       Algorithm algorithm = Algorithm.HMAC256(Env.key);
-      Claim data = JWT.require(algorithm).build().verify(token).getClaim("data");
-      return (HashMap<String,Object>) data.asMap();
+      Claim data = JWT.require(algorithm).build().verify(token).getClaim("token");
+      return (Map<String,Object>) data.asMap();
     } catch (Exception exception){
       return null;
     }
