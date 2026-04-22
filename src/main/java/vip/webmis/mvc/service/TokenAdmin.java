@@ -91,8 +91,10 @@ public class TokenAdmin extends Base {
     // 拆分
     String[] tmp;
     String[] perm = Util.Explode(" ", permStr);
+    if(perm.length==0) return arr;
     for(String p: perm) {
       tmp = Util.Explode(":", p);
+      if(tmp.length!=2) continue;
       arr.put(tmp[0], tmp[1]);
     }
     return arr;

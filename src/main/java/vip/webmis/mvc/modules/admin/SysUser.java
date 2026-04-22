@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
 import vip.webmis.mvc.core.ControllerBase;
+import vip.webmis.mvc.service.Data;
+import vip.webmis.mvc.service.Status;
 import vip.webmis.mvc.service.TokenAdmin;
 import vip.webmis.mvc.util.Time;
 import vip.webmis.mvc.util.Util;
-
+import vip.webmis.mvc.models.SysRole;
 import vip.webmis.mvc.models.User;
 
 /* 系统用户 */
@@ -25,23 +27,26 @@ import vip.webmis.mvc.models.User;
 @RequestMapping("/admin")
 public class SysUser extends ControllerBase {
 
+  private Map<String, Object> type_name = new HashMap<>();    // 类型
+  private Map<String, Object> status_name = new HashMap<>();  // 状态
+
   /* 统计 */
   @RequestMapping(value="sys_user/total", produces="application/json;charset=UTF-8")
   public Map<String, Object> Total(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
-    Map<String,Object> res;
+    Map<String, Object> res;
     // 参数
     String token = String.valueOf(JsonName(json, "token"));
-    HashMap<String,Object> data = (HashMap<String,Object>) JsonName(json, "data");
+    HashMap<String, Object> data = (HashMap<String, Object>) JsonName(json, "data");
     // 验证
     String msg = TokenAdmin.Verify(token, "");
     if(msg!="") {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4001);
       return GetJSON(res);
     }
     if(data==null || data.size()==0) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       return GetJSON(res);
     }
@@ -57,12 +62,12 @@ public class SysUser extends ControllerBase {
     m.Where(where);
     Map<String, Object> one = m.FindFirst();
     // 数据
-    Map<String,Object> total = new HashMap<String,Object>();
+    Map<String, Object> total = new HashMap<String, Object>();
     if(one!=null) {
       total.put("total", Integer.valueOf(one.get("total").toString()));
     }
     // 返回
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code",0);
     res.put("time", Time.Date("Y/m/d H:i:s"));
     res.put("data", total);
@@ -73,22 +78,22 @@ public class SysUser extends ControllerBase {
   @RequestMapping(value="sys_user/list", produces="application/json;charset=UTF-8")
   public Map<String, Object> List(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
-    Map<String,Object> res;
+    Map<String, Object> res;
     // 参数
     String token = String.valueOf(JsonName(json, "token"));
-    HashMap<String,Object> data = (HashMap<String,Object>) JsonName(json, "data");
+    HashMap<String, Object> data = (HashMap<String, Object>) JsonName(json, "data");
     Integer page = (Integer) JsonName(json, "page");
     Integer limit = (Integer) JsonName(json, "limit");
     String order = String.valueOf(JsonName(json, "order"));
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4001);
       return GetJSON(res);
     }
     if(data==null || data.size()==0 || page==null || limit==null) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       return GetJSON(res);
     }
@@ -111,12 +116,15 @@ public class SysUser extends ControllerBase {
     m.Page(page, limit);
     List<HashMap<String, Object>> list = m.Find();
     // 数据
-    Print(m.GetSQL());
-    Print(page, limit);
-    Print(list);
-    Print("Order", order);
+    this.type_name = Status.Public("role_name");
+    for (HashMap<String, Object> v : list) {
+      v.put("status", v.get("status").equals(1));
+      v.put("type_name", this.type_name.containsKey(v.get("type").toString())?this.type_name.get(v.get("type").toString()):"-");
+      v.put("role_name", v.get("role_name")!=null?v.get("role_name"):(!v.get("perm").equals("")?"私有":"-"));
+      v.put("img", Data.Img(v.get("img").toString()));
+    }
     // 返回
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code",0);
     res.put("time", Time.Date("Y/m/d H:i:s"));
     res.put("data", list);
@@ -124,7 +132,7 @@ public class SysUser extends ControllerBase {
   }
 
   /* 搜索条件 */
-  private String getWhere(HashMap<String,Object> d) {
+  private String getWhere(HashMap<String, Object> d) {
     ArrayList<String> where = new ArrayList<String>();
     // 时间
     String stime = d.containsKey("stime")?String.valueOf(d.get("stime")):Time.Date("Y-m-d");
@@ -135,6 +143,61 @@ public class SysUser extends ControllerBase {
     where.add("a.ltime<="+String.valueOf(end));
     // 结果
     return Util.Implode(" AND ", where.toArray(new String[0]));
+  }
+
+  /* 选项 */
+  @RequestMapping(value="sys_user/get_select", produces="application/json;charset=UTF-8")
+  public Map<String, Object> GetSelect(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
+    ControllerBase.lang = params.get("lang");
+    Map<String, Object> res;
+    // 参数
+    String token = String.valueOf(JsonName(json, "token"));
+    // 验证
+    String msg = TokenAdmin.Verify(token, "");
+    if(msg!="") {
+      res = new HashMap<String, Object>();
+      res.put("code", 4001);
+      return GetJSON(res);
+    }
+    // 类型
+    List<Map<String, Object>> type_name = new ArrayList<Map<String, Object>>();
+    this.type_name = Status.Public("role_name");
+    for (String k : this.type_name.keySet()) {
+      Map<String, Object> v = new HashMap<String, Object>();
+      v.put("label", this.type_name.get(k));
+      v.put("value", k);
+      type_name.add(v);
+    }
+    // 角色
+    SysRole m = new SysRole();
+	  m.Columns("id", "name");
+	  m.Where("status=1");
+	  List<HashMap<String, Object>> all = m.Find();
+    List<Map<String, Object>> role_name = new ArrayList<Map<String, Object>>();
+    for (HashMap<String, Object> v : all) {
+      Map<String, Object> tmp = new HashMap<String, Object>();
+      tmp.put("label", v.get("name"));
+      tmp.put("value", v.get("id"));
+      role_name.add(tmp);
+    }
+    // 状态
+    List<Map<String, Object>> status_name = new ArrayList<Map<String, Object>>();
+    this.status_name = Status.Public("status_name");
+    for (String k : this.status_name.keySet()) {
+      Map<String, Object> v = new HashMap<String, Object>();
+      v.put("label", this.status_name.get(k));
+      v.put("value", k);
+      status_name.add(v);
+    }
+    // 返回
+    Map<String, Object> data = new HashMap<String, Object>();
+    data.put("type_name", type_name);
+    data.put("role_name", role_name);
+    data.put("status_name", status_name);
+    res = new HashMap<String, Object>();
+    res.put("code", 0);
+    res.put("data", data);
+    return GetJSON(res);
   }
   
 }
