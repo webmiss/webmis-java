@@ -38,56 +38,58 @@ public class MySQLConnectionPool extends Base {
     try {
       Class.forName("com.mysql.cj.jdbc.Driver");
     } catch (ClassNotFoundException e) {
-      throw new RuntimeException("[ " + this.name + "] 加载MySQL驱动失败", e);
+      Print("[ " + this.name + " ] 加载MySQL驱动失败", e);
     }
     // 初始化连接数
     for (int i = 0; i < this.initSize; i++) {
-      try {
-        Connection conn = createConnection();
-        idleConnections.offer(conn);
-      } catch (SQLException e) {
-        Print("[ " + this.name + " ]", e.getMessage());
-      }
+      Connection conn = createConnection();
+      if(conn != null) idleConnections.offer(conn);
     }
   }
 
   /* 创建连接 */
-  private Connection createConnection() throws SQLException {
-    return DriverManager.getConnection(this.url, this.user, this.password);
+  private Connection createConnection() {
+    Connection conn = null;
+    try {
+      return DriverManager.getConnection(this.url, this.user, this.password);
+    } catch (Exception e) {
+      Print("[ " + this.name + " ] 创建连接", e.getMessage());
+    }
+    return conn;
   }
 
   /* 获取连接 */
-  public Connection getConnection(long timeout) throws SQLException, InterruptedException {
-    // 从队列取连接
-    Connection conn = idleConnections.poll(timeout, TimeUnit.MILLISECONDS);
-    if (conn == null) {
-      if (idleConnections.size() + (maxSize - idleConnections.remainingCapacity()) < maxSize) {
-        return createConnection();
-      } else {
-        throw new SQLException("[ " + this.name + " ] 连接池已满，获取连接超时");
+  public Connection getConnection(long timeout) {
+    Connection conn = null;
+    try {
+      // 从队列取连接
+      conn = idleConnections.poll(timeout, TimeUnit.MILLISECONDS);
+      Print("1.获取连接", timeout, conn, GetIdleCount());
+      if (conn == null) {
+        if (idleConnections.size() + (maxSize - idleConnections.remainingCapacity()) < maxSize) {
+          return createConnection();
+        } else {
+          Print("[ " + this.name + " ] 连接池已满，获取连接超时");
+        }
       }
-    }
-    // 校验连接
-    if (conn.isClosed() || !conn.isValid(3)) {
-      return createConnection();
+    } catch (InterruptedException e) {
+      Print("[ " + this.name + " ] 获取连接", e.getMessage());
     }
     return conn;
   }
 
   /* 归还连接 */
-  public void releaseConnection(Connection conn) {
-    if (conn == null) return;
+  public boolean releaseConnection(Connection conn) {
+    if (conn == null) return false;
     try {
       if (!conn.isClosed() && conn.isValid(3)) {
-        idleConnections.offer(conn);
+        Print("2.归还连接", conn, GetIdleCount());
+        return idleConnections.offer(conn);
       }
     } catch (SQLException e) {
-      try {
-        conn.close();
-      } catch (SQLException ex) {
-        Print("[ " + this.name + " ]", e.getMessage());
-      }
+      Print("[ " + this.name + " ] 归还连接", e.getMessage());
     }
+    return false;
   }
 
   /* 获取空闲连接数 */
