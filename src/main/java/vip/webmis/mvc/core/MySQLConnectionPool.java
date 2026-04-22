@@ -23,7 +23,7 @@ public class MySQLConnectionPool extends Base {
   /* 构造函数 */
   public MySQLConnectionPool(Map<String, Object> config, int initSize, int maxSize) {
     // 配置
-    this.url = "jdbc:" + config.get("type") + "://" + config.get("host") + ":" + config.get("port") + "/" + config.get("database") + "?useUnicode=true&characterEncoding=" + config.get("charset");
+    this.url = "jdbc:" + config.get("type") + "://" + config.get("host") + ":" + config.get("port") + "/" + config.get("database") + "?useUnicode=true&useOldAliasMetadataBehavior=true&characterEncoding=" + config.get("charset");
     this.user = (String)config.get("user");
     this.password = (String)config.get("password");
     // 初始化

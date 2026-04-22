@@ -40,7 +40,7 @@ public class Safety {
   }
 
   /* Base64-加密 */
-  static public String Encode(Map<String,Object> param) {
+  static public String Encode(Map<String, Object> param) {
     try {
       Algorithm algorithm = Algorithm.HMAC256(Env.key);
       return JWT.create().withClaim("token", param).sign(algorithm);
@@ -50,11 +50,11 @@ public class Safety {
   }
 
   /* Base64-解密 */
-  static public Map<String,Object> Decode(String token) {
+  static public Map<String, Object> Decode(String token) {
     try {
       Algorithm algorithm = Algorithm.HMAC256(Env.key);
       Claim data = JWT.require(algorithm).build().verify(token).getClaim("token");
-      return (Map<String,Object>) data.asMap();
+      return (Map<String, Object>) data.asMap();
     } catch (Exception exception){
       return null;
     }

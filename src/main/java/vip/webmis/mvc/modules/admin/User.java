@@ -14,7 +14,6 @@ import vip.webmis.mvc.config.Env;
 import vip.webmis.mvc.core.ControllerBase;
 import vip.webmis.mvc.core.Redis;
 import vip.webmis.mvc.librarys.Safety;
-import vip.webmis.mvc.models.SysRole;
 import vip.webmis.mvc.service.Data;
 import vip.webmis.mvc.service.TokenAdmin;
 import vip.webmis.mvc.util.Hash;
@@ -31,7 +30,7 @@ public class User extends ControllerBase {
   @RequestMapping(value="user/login", produces="application/json;charset=UTF-8")
   public Map<String, Object> Login(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
-    Map<String,Object> res;
+    Map<String, Object> res;
     // 参数
     String uname = String.valueOf(JsonName(json, "uname"));
     String passwd = String.valueOf(JsonName(json, "passwd"));
@@ -40,13 +39,13 @@ public class User extends ControllerBase {
     String vcode_url = BaseUrl(request, "admin/user/vcode")+"/"+uname+"?"+Time.Time();
     // 验证
     if(!Safety.IsRight("uname", uname) &&!Safety.IsRight("tel", uname) &&!Safety.IsRight("email", uname)) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       res.put("msg", GetLang("login_uname"));
       return GetJSON(res);
     }
     if(!passwd.equals("") && !vcode.equals("")) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       res.put("msg", GetLang("login_verify"));
       return GetJSON(res);
@@ -57,7 +56,7 @@ public class User extends ControllerBase {
     if(!passwd.equals("")) {
       // 密码长度
       if(!Safety.IsRight("passwd", passwd)) {
-        res = new HashMap<String,Object>();
+        res = new HashMap<String, Object>();
         res.put("code", 4000);
         res.put("msg", GetLang("login_passwd"));
         return GetJSON(res);
@@ -67,13 +66,13 @@ public class User extends ControllerBase {
       String code = redis.Get(Env.admin_token_prefix+"_vcode_"+uname);
       if(!code.equals("")) {
         if(code.length()!=4) {
-          res = new HashMap<String,Object>();
+          res = new HashMap<String, Object>();
           res.put("code", 4001);
           res.put("msg", GetLang("login_vcode"));
           res.put("vcode_url", vcode_url);
           return GetJSON(res);
         } else if(code != vcode) {
-          res = new HashMap<String,Object>();
+          res = new HashMap<String, Object>();
           res.put("code", 4002);
           res.put("msg", GetLang("login_verify_vcode"));
           res.put("vcode_url", vcode_url);
@@ -86,7 +85,7 @@ public class User extends ControllerBase {
       Redis redis = new Redis();
       String code = redis.Get(Env.admin_token_prefix+"_vcode_"+uname);
       if(code.equals("") || code!=vcode) {
-        res = new HashMap<String,Object>();
+        res = new HashMap<String, Object>();
         res.put("code", 4000);
         res.put("msg", GetLang("login_verify_vcode"));
         return GetJSON(res);
@@ -99,10 +98,12 @@ public class User extends ControllerBase {
     m.Table("user a");
     m.LeftJoin("user_info AS b", "a.id=b.uid");
     m.LeftJoin("sys_perm AS c", "a.id=c.uid");
+    m.LeftJoin("sys_role AS d", "c.role=d.id");
     m.Columns(
       "a.id", "a.status", "a.password", "a.tel", "a.email",
       "b.type", "b.nickname", "b.department", "b.position", "b.name", "b.gender", "FROM_UNIXTIME(b.birthday, '%Y-%m-%d') as birthday", "b.img", "b.signature",
-      "c.role", "c.perm"
+      "c.role", "c.perm",
+      "d.perm as role_perm"
     );
     m.Where(where);
     Map<String, Object> data = m.FindFirst();
@@ -112,7 +113,7 @@ public class User extends ControllerBase {
       redis.Set(Env.admin_token_prefix+"_vcode_"+uname, Time.Time().toString());
       redis.Expire(Env.admin_token_prefix+"_vcode_"+uname, 24*3600);
       // 返回
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       res.put("msg", GetLang("login_verify"));
       res.put("vcode_url", vcode_url);
@@ -124,7 +125,7 @@ public class User extends ControllerBase {
     }
     // 是否禁用
     if(data.get("status").equals("0")) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       res.put("msg", GetLang("login_verify_status"));
       return GetJSON(res);
@@ -132,32 +133,19 @@ public class User extends ControllerBase {
     // 默认密码
     Boolean isPasswd = data.get("password").equals(Hash.Md5(Env.password));
     // 权限
-    String perm = String.valueOf(data.get("perm"));
-    if(perm.equals("")) {
-      if(data.get("role").equals("")) {
-        res = new HashMap<String,Object>();
-        res.put("code", 4000);
-        res.put("msg", GetLang("login_verify_perm"));
-        return GetJSON(res);
-      }
-      // 角色权限
-      SysRole m1 = new SysRole();
-      m1.Columns("perm");
-      m1.Where("id="+data.get("role"));
-      Map<String, Object> d1 = m1.FindFirst();
-      if(!d1.isEmpty()) perm = String.valueOf(d1.get("perm"));
-    }
+    String perm = String.valueOf(data.get("role_perm"));
+    if(!data.get("perm").equals("")) perm = String.valueOf(data.get("perm"));
     TokenAdmin.SavePerm(String.valueOf(data.get("id")), perm);
     // 登录时间
     Integer ltime = Time.Time();
-    Map<String,Object> d = new HashMap<String,Object>();
+    Map<String, Object> d = new HashMap<String, Object>();
     d.put("ltime", ltime);
     m = new vip.webmis.mvc.models.User();
     m.Set(d);
     m.Where("id=?", data.get("id"));
     m.Update();
     // Token
-    Map<String,Object> tData = new HashMap<String,Object>();
+    Map<String, Object> tData = new HashMap<String, Object>();
     tData.put("uid", data.get("id").toString());
     tData.put("uname", uname);
     tData.put("name", data.get("name"));
@@ -165,7 +153,7 @@ public class User extends ControllerBase {
     tData.put("isPasswd", isPasswd);
     String token = TokenAdmin.Create(tData);
     // 用户信息
-    Map<String,Object> uinfo = new HashMap<String,Object>();
+    Map<String, Object> uinfo = new HashMap<String, Object>();
     uinfo.put("uid", data.get("id").toString());
     uinfo.put("uname", uname);
     uinfo.put("tel", data.get("tel"));
@@ -181,11 +169,11 @@ public class User extends ControllerBase {
     uinfo.put("img", Data.Img(data.get("img").toString()));
     uinfo.put("signature", data.get("signature"));
     // 返回
-    data = new HashMap<String,Object>();
+    data = new HashMap<String, Object>();
     data.put("token", token);
     data.put("uinfo", uinfo);
     data.put("isPasswd", isPasswd);
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code", 0);
     res.put("data", data);
     return GetJSON(res);
@@ -195,20 +183,20 @@ public class User extends ControllerBase {
   @RequestMapping(value="user/token", produces="application/json;charset=UTF-8")
   public Map<String, Object> Token(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
-    Map<String,Object> res;
+    Map<String, Object> res;
     // 参数
     String token = String.valueOf(JsonName(json, "token"));
     Boolean is_uinfo = (Boolean) JsonName(json, "uinfo");
     // 验证
     String msg = TokenAdmin.Verify(token, "");
     if(msg!="") {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4001);
       return GetJSON(res);
     }
-    Map<String,Object> tData = TokenAdmin.Token(token);
+    Map<String, Object> tData = TokenAdmin.Token(token);
     // 用户信息
-    Map<String,Object> uinfo = new HashMap<String,Object>();
+    Map<String, Object> uinfo = new HashMap<String, Object>();
     if(is_uinfo) {
       vip.webmis.mvc.models.User m = new vip.webmis.mvc.models.User();
       m.Table("user as a");
@@ -224,11 +212,11 @@ public class User extends ControllerBase {
       uinfo.put("img", Data.Img(String.valueOf(uinfo.get("img"))));
     }
     // 返回
-    Map<String,Object> data = new HashMap<String,Object>();
+    Map<String, Object> data = new HashMap<String, Object>();
     data.put("token_time", tData.get("time"));
     data.put("uinfo", uinfo);
     data.put("isPasswd", tData.get("isPasswd"));
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code", 0);
     res.put("data", data);
     return GetJSON(res);

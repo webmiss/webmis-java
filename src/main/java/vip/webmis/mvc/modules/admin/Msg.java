@@ -22,13 +22,13 @@ public class Msg extends ControllerBase {
   @RequestMapping(value="msg/list", produces="application/json;charset=UTF-8")
   public Map<String, Object> List(@RequestParam Map<String, String> params) {
     // 数据
-    Map<String,Object> data = new HashMap<String,Object>();
+    Map<String, Object> data = new HashMap<String, Object>();
     int num = 0;
     List<HashMap<String, Object>> list = new ArrayList<>();
     data.put("num", num);
     data.put("list", list);
     // 返回
-    Map<String,Object> res = new HashMap<String,Object>();
+    Map<String, Object> res = new HashMap<String, Object>();
     res.put("code",0);
     res.put("data", data);
     return GetJSON(res);

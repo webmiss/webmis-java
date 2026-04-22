@@ -215,10 +215,10 @@ public class Model extends Base {
   }
 
   /* 查询-多条 */
-  public List<HashMap<String,Object>> Find() {
+  public List<HashMap<String, Object>> Find() {
     return this.Find("");
   }
-  public List<HashMap<String,Object>> Find(String sql, Object... args) {
+  public List<HashMap<String, Object>> Find(String sql, Object... args) {
     // SQL
     List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
@@ -232,15 +232,15 @@ public class Model extends Base {
     // 执行
     PreparedStatement ps = this.Exec(this.conn, sql, param);
     if(ps == null) return null;
-    List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
+    List<HashMap<String, Object>> data = this.FindDataAll(this.conn, ps);
     return data;
   }
 
   /* 查询-单条 */
-  public Map<String,Object> FindFirst() {
+  public Map<String, Object> FindFirst() {
     return this.FindFirst("");
   }
-  public Map<String,Object> FindFirst(String sql, Object... args) {
+  public Map<String, Object> FindFirst(String sql, Object... args) {
     // SQL
     List<Object> param = Arrays.asList(args);
     if(sql.equals("")) {
@@ -255,19 +255,19 @@ public class Model extends Base {
     // 执行
     PreparedStatement ps = this.Exec(this.conn, sql, param);
     if(ps == null) return null;
-    List<HashMap<String,Object>> data = this.FindDataAll(this.conn, ps);
+    List<HashMap<String, Object>> data = this.FindDataAll(this.conn, ps);
     if(data.size() == 0) return null;
     return data.get(0);
   }
 
   /* 查询-结果 */
-  public List<HashMap<String,Object>> FindDataAll(Connection conn, PreparedStatement ps) {
-    List<HashMap<String,Object>> res = new ArrayList<>();
+  public List<HashMap<String, Object>> FindDataAll(Connection conn, PreparedStatement ps) {
+    List<HashMap<String, Object>> res = new ArrayList<>();
     try {
       ResultSet rs = ps.executeQuery();
       ResultSetMetaData data = rs.getMetaData();
       while(rs.next()) {
-        HashMap<String,Object> row = new HashMap<>();
+        HashMap<String, Object> row = new HashMap<>();
         for(int i=1;i<=data.getColumnCount();i++) {
           row.put(data.getColumnName(i), rs.getObject(i));
         }

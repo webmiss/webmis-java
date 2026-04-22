@@ -29,13 +29,13 @@ public class SysMenus extends ControllerBase {
   /* 获取菜单-权限 */
   @RequestMapping(value="sys_menus/get_menus_perm", produces="application/json;charset=UTF-8")
   public Map<String, Object> GetMenusPerm(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
-    Map<String,Object> res;
+    Map<String, Object> res;
     // 参数
     String token = String.valueOf(JsonName(json, "token"));
     // 验证
     String msg = TokenAdmin.Verify(token, "");
     if(msg!="") {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4001);
       return GetJSON(res);
     }
@@ -45,7 +45,7 @@ public class SysMenus extends ControllerBase {
     _getMenus();
     // 返回
     List<HashMap<String, Object>> data = _getMenusPerm("0");
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code", 0);
     res.put("data", data);
     return GetJSON(res);

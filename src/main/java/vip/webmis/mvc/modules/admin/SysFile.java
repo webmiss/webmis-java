@@ -32,30 +32,30 @@ public class SysFile extends ControllerBase {
   @RequestMapping(value="sys_file/list", produces="application/json;charset=UTF-8")
   public Map<String, Object> List(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
-    Map<String,Object> res;
+    Map<String, Object> res;
     // 参数
     String token = String.valueOf(JsonName(json, "token"));
     String path = String.valueOf(JsonName(json, "path"));
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4001);
       return GetJSON(res);
     }
     if(path.isEmpty()) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       return GetJSON(res);
     }
     // 数据
     FileEo.Root = Env.root_dir + dirRoot;
     HashMap<String, Object> list = FileEo.List(path);
-    Map<String,Object> data = new HashMap<String,Object>();
+    Map<String, Object> data = new HashMap<String, Object>();
     data.put("url", BaseUrl(request, dirRoot));
     data.put("list", list);
     // 返回
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code",0);
     res.put("time", Time.Date("Y/m/d H:i:s"));
     res.put("data", data);
@@ -66,7 +66,7 @@ public class SysFile extends ControllerBase {
   @RequestMapping(value="sys_file/mkdir", produces="application/json;charset=UTF-8")
   public Map<String, Object> Mkdir(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
-    Map<String,Object> res;
+    Map<String, Object> res;
     // 参数
     String token = String.valueOf(JsonName(json, "token"));
     String path = String.valueOf(JsonName(json, "path"));
@@ -74,24 +74,24 @@ public class SysFile extends ControllerBase {
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4001);
       return GetJSON(res);
     }
     if(path.isEmpty() || name.isEmpty()) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       return GetJSON(res);
     }
     // 数据
     FileEo.Root = Env.root_dir + dirRoot;
     if(!FileEo.Mkdir(path+name)) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 5000);
       return GetJSON(res);
     }
     // 返回
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code",0);
     return GetJSON(res);
   }
@@ -100,7 +100,7 @@ public class SysFile extends ControllerBase {
   @RequestMapping(value="sys_file/rename", produces="application/json;charset=UTF-8")
   public Map<String, Object> Rename(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
-    Map<String,Object> res;
+    Map<String, Object> res;
     // 参数
     String token = String.valueOf(JsonName(json, "token"));
     String path = String.valueOf(JsonName(json, "path"));
@@ -109,24 +109,24 @@ public class SysFile extends ControllerBase {
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4001);
       return GetJSON(res);
     }
     if(path.isEmpty() || name.isEmpty() || rename.isEmpty()) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       return GetJSON(res);
     }
     // 数据
     FileEo.Root = Env.root_dir + dirRoot;
     if(!FileEo.Rename(path+rename, path+name)) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 5000);
       return GetJSON(res);
     }
     // 返回
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code",0);
     return GetJSON(res);
   }
@@ -135,7 +135,7 @@ public class SysFile extends ControllerBase {
   @RequestMapping(value="sys_file/remove", produces="application/json;charset=UTF-8")
   public Map<String, Object> Remove(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
     ControllerBase.lang = params.get("lang");
-    Map<String,Object> res;
+    Map<String, Object> res;
     // 参数
     String token = String.valueOf(JsonName(json, "token"));
     String path = String.valueOf(JsonName(json, "path"));
@@ -143,12 +143,12 @@ public class SysFile extends ControllerBase {
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4001);
       return GetJSON(res);
     }
     if(path.isEmpty() || data.isEmpty()) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       return GetJSON(res);
     }
@@ -158,7 +158,7 @@ public class SysFile extends ControllerBase {
       FileEo.RemoveAll(path+v);
     }
     // 返回
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code",0);
     return GetJSON(res);
   }
@@ -167,19 +167,19 @@ public class SysFile extends ControllerBase {
   @RequestMapping(value="sys_file/upload", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
   public Map<String, Object> Upload(@RequestParam Map<String, String> params, HttpServletRequest request, @RequestParam("file") MultipartFile file) {
     ControllerBase.lang = params.get("lang");
-    Map<String,Object> res;
+    Map<String, Object> res;
     // // 参数
     String token = String.valueOf(params.get("token"));
     String path = String.valueOf(params.get("path"));
     // 验证
     String msg = TokenAdmin.Verify(token, request.getRequestURI());
     if(msg!="") {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4001);
       return GetJSON(res);
     }
     if(path.isEmpty()) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 4000);
       return GetJSON(res);
     }
@@ -189,13 +189,13 @@ public class SysFile extends ControllerBase {
     param.put("bind", null);
     String img = Upload.File(file, param);
     if(img.isEmpty()) {
-      res = new HashMap<String,Object>();
+      res = new HashMap<String, Object>();
       res.put("code", 5000);
       res.put("msg", "上传失败!");
       return GetJSON(res);
     }
     // 返回
-    res = new HashMap<String,Object>();
+    res = new HashMap<String, Object>();
     res.put("code",0);
     return GetJSON(res);
   }

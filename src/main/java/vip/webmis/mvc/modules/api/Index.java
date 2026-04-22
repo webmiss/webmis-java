@@ -32,7 +32,7 @@ public class Index extends ControllerBase {
     Print("Data", data, r.Get("test"));
     r.Close();
     // 返回
-    HashMap<String,Object> res = new HashMap<String,Object>();
+    HashMap<String, Object> res = new HashMap<String, Object>();
     res.put("code",0);
     res.put("msg","Java Api");
     return GetJSON(res);
