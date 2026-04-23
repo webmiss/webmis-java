@@ -48,7 +48,7 @@ public class TokenAdmin extends Base {
     m.Columns("id", "action");
     m.Where("controller=?", controller);
     Map<String, Object> data = m.FindFirst();
-    if(data.isEmpty()) return "菜单验证无效!";
+    if(data==null || data.isEmpty()) return "菜单验证无效!";
     // 验证菜单
     String id = String.valueOf(data.get("id"));
     Map<String, Object> perm = GetPerm(token);
@@ -94,8 +94,7 @@ public class TokenAdmin extends Base {
     if(perm.length==0) return arr;
     for(String p: perm) {
       tmp = Util.Explode(":", p);
-      if(tmp.length!=2) continue;
-      arr.put(tmp[0], tmp[1]);
+      if(tmp!=null && tmp.length==2) arr.put(tmp[0], tmp[1]);
     }
     return arr;
   }

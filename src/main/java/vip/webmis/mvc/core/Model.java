@@ -1,5 +1,8 @@
 package vip.webmis.mvc.core;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,8 +18,10 @@ import vip.webmis.mvc.config.Db;
 
 /* 模型 */
 public class Model extends Base {
-  public static MySQLConnectionPool pool;           // 连接池
-  public Connection conn;                           // 连接
+  // public static MySQLConnectionPool pool;           // 连接池
+  public static HikariDataSource pool_default;      // 数据源: default
+  public static HikariDataSource pool_other;        // 数据源: other
+  // public Connection conn;                           // 连接
   private final String name = "Model";              // 名称
   private String db = "default";                    // 数据库
   private String table = "";                        // 数据表
@@ -36,26 +41,38 @@ public class Model extends Base {
 
   /* 获取连接 */
   public Connection DBConn(String name) {
-    // 默认值
-    this.db = name==""?"default":name;
-    // 配置
-    Map<String, Object> config = new Db().Config(name);
-    int InitSize = (Integer)config.get("poolInitSize");
-    int MaxSize = (Integer)config.get("poolMaxSize");
-    int MaxWait = (Integer)config.get("poolMaxWait");
-    // 连接池
-    if(Model.pool == null) {
-      Model.pool = new MySQLConnectionPool(config, InitSize, MaxSize);
-    }
-    // 创建连接
-    if (this.conn == null) {
-      try {
-        this.conn = Model.pool.getConnection(MaxWait);
-      } catch (Exception e) {
-        Print("[ "+this.name+" ] Conn:", e.getMessage());
+    try{
+      // 配置
+      Map<String, Object> config = new Db().Config(name);
+      String type = (String) config.get("type");
+      String host = (String) config.get("host");
+      String port = (String) config.get("port");
+      String database = (String) config.get("database");
+      String user = (String) config.get("user");
+      String password = (String) config.get("password");
+      String charset = (String) config.get("charset");
+      String url = "jdbc:"+type+"://"+host+":"+port+"/"+database+"?useUnicode=true&characterEncoding="+charset+"&serverTimezone=Asia/Shanghai&autoReconnect=true";
+      // 连接池
+      HikariConfig cfg = new HikariConfig();
+      if(Model.pool_default == null || Model.pool_default.isClosed()) {
+        cfg.setJdbcUrl(url);
+        cfg.setUsername(user);
+        cfg.setPassword(password);
+        cfg.setDriverClassName("org.mariadb.jdbc.Driver");
+        cfg.setMinimumIdle((Integer) config.get("poolInitSize"));
+        cfg.setMaximumPoolSize((Integer) config.get("poolMaxSize"));
+        cfg.setConnectionTimeout((Integer) config.get("poolMaxWait"));
+        cfg.setValidationTimeout(3000);
+        cfg.setConnectionTestQuery("SELECT 1");
+        Model.pool_default = new HikariDataSource(cfg);
+        Print("[ "+this.name+" ] DBConn:", "pool_default");
       }
+      // 获取连接
+      return Model.pool_default.getConnection();
+    } catch(SQLException e) {
+      Print("[ "+this.name+" ] DBConn:", e.getMessage());
+      return null;
     }
-    return this.conn;
   }
 
   /* 执行SQL */
@@ -63,9 +80,10 @@ public class Model extends Base {
     return this.Exec(conn, sql, args, true);
   }
   public PreparedStatement Exec(Connection conn, String sql, List<Object> args, boolean isQuery) {
+    if(conn==null) return null;
     try {
       PreparedStatement ps = isQuery?conn.prepareStatement(sql):conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
-      for(int i=0;i<args.size();i++) {
+      for(int i=0; i<args.size(); i++) {
         ps.setObject(i+1, args.get(i));
       }
       return ps;
@@ -76,15 +94,12 @@ public class Model extends Base {
   }
 
   /* 关闭 */
-  public void Close() {
-    try {
-      if (Model.pool != null) {
-        // 归还连接池
-        Model.pool.releaseConnection(this.conn);
-        this.conn = null;
-      }
-    } catch (Exception e) {
-      Print("[ "+this.name+" ] Close:", e.getMessage());
+  public void Close(Connection conn) {
+    if(conn!=null) {
+      try {
+        Print("[ "+this.name+" ] Close:", conn);
+        conn.close();
+      } catch (Exception ignored) {}
     }
   }
 
@@ -228,12 +243,26 @@ public class Model extends Base {
       if(sql.equals("")) return null;
     }
     // 连接
-    if(this.conn==null) DBConn(this.db);
-    // 执行
-    PreparedStatement ps = this.Exec(this.conn, sql, param);
-    if(ps == null) return null;
-    List<HashMap<String, Object>> data = this.FindDataAll(this.conn, ps);
-    return data;
+    try(Connection conn = DBConn(this.db)) {
+      // 执行
+      PreparedStatement ps = this.Exec(conn, sql, param);
+      if(ps == null) return null;
+      // List<HashMap<String, Object>> data = this.FindDataAll(ps);
+      List<HashMap<String, Object>> res = new ArrayList<>();
+      ResultSet rs = ps.executeQuery();
+      ResultSetMetaData data = rs.getMetaData();
+      while(rs.next()) {
+        HashMap<String, Object> row = new HashMap<>();
+        for(int i=1;i<=data.getColumnCount();i++) {
+          row.put(data.getColumnName(i), rs.getObject(i));
+        }
+        res.add(row);
+      }
+      return res;
+    } catch (SQLException e) {
+      Print("[ "+this.name+" ]", "Find:", e.getMessage());
+      return null;
+    }
   }
 
   /* 查询-单条 */
@@ -251,19 +280,12 @@ public class Model extends Base {
       if(sql.equals("")) return null;
     }
     // 连接
-    if(this.conn==null) DBConn(this.db);
-    // 执行
-    PreparedStatement ps = this.Exec(this.conn, sql, param);
-    if(ps == null) return null;
-    List<HashMap<String, Object>> data = this.FindDataAll(this.conn, ps);
-    if(data.size() == 0) return null;
-    return data.get(0);
-  }
-
-  /* 查询-结果 */
-  public List<HashMap<String, Object>> FindDataAll(Connection conn, PreparedStatement ps) {
-    List<HashMap<String, Object>> res = new ArrayList<>();
-    try {
+    try(Connection conn = DBConn(this.db)) {
+      // 执行
+      PreparedStatement ps = this.Exec(conn, sql, param);
+      if(ps == null) return null;
+      // List<HashMap<String, Object>> data = this.FindDataAll(ps);
+      List<HashMap<String, Object>> res = new ArrayList<>();
       ResultSet rs = ps.executeQuery();
       ResultSetMetaData data = rs.getMetaData();
       while(rs.next()) {
@@ -273,9 +295,26 @@ public class Model extends Base {
         }
         res.add(row);
       }
-      rs.close();
-      ps.close();
-      this.Close();
+      if(res.size() == 0) return null;
+      return res.get(0);
+    } catch (SQLException e) {
+      Print("[ "+this.name+" ]", "FindFirst:", e.getMessage());
+      return null;
+    }
+  }
+
+  /* 查询-结果 */
+  public List<HashMap<String, Object>> FindDataAll(PreparedStatement ps) {
+    List<HashMap<String, Object>> res = new ArrayList<>();
+    try( ResultSet rs = ps.executeQuery()) {
+      ResultSetMetaData data = rs.getMetaData();
+      while(rs.next()) {
+        HashMap<String, Object> row = new HashMap<>();
+        for(int i=1;i<=data.getColumnCount();i++) {
+          row.put(data.getColumnName(i), rs.getObject(i));
+        }
+        res.add(row);
+      }
     } catch (SQLException e) {
       Print("[ "+this.name+" ]", "Query: "+e.getMessage());
     }
@@ -357,17 +396,15 @@ public class Model extends Base {
       sql = (String)res[0];
       param = (List<Object>)res[1];
     }
-    try {
-      // 连接
-      if(this.conn==null) DBConn(this.db);
+    // 连接
+    PreparedStatement ps = null;
+    try(Connection conn = DBConn(this.db)) {
       // 执行
-      PreparedStatement ps = this.Exec(this.conn, sql, param, false);
+      ps = this.Exec(conn, sql, param, false);
+      if(ps==null) return -1;
       this.nums = ps.executeUpdate();
       ResultSet rs = ps.getGeneratedKeys();
       this.id = rs.next()?rs.getInt(1):0;
-      rs.close();
-      ps.close();
-      this.Close();
       return this.id;
     } catch (SQLException e) {
       Print("[ "+this.name+" ]", "Insert: "+e.getMessage());
@@ -429,14 +466,13 @@ public class Model extends Base {
       sql = (String)res[0];
       param = (List<Object>)res[1];
     }
-    try {
-      // 连接
-      if(this.conn==null) DBConn(this.db);
+    // 连接
+    PreparedStatement ps = null;
+    try(Connection conn = DBConn(this.db)) {
       // 执行
-      PreparedStatement ps = this.Exec(this.conn, sql, param, false);
+      ps = this.Exec(conn, sql, param, false);
+      if(ps==null) return false;
       this.nums = ps.executeUpdate();
-      ps.close();
-      this.Close();
       return true;
     } catch (SQLException e) {
       Print("[ "+this.name+" ]", "Update: "+e.getMessage());
@@ -479,14 +515,13 @@ public class Model extends Base {
       sql = (String)res[0];
       param = (List<Object>)res[1];
     }
-    try {
-      // 连接
-      if(this.conn==null) DBConn(this.db);
+    // 连接
+    PreparedStatement ps = null;
+    try(Connection conn = DBConn(this.db)) {
       // 执行
-      PreparedStatement ps = this.Exec(this.conn, sql, param, false);
+      ps = this.Exec(conn, sql, param, false);
+      if(ps==null) return false;
       this.nums = ps.executeUpdate();
-      ps.close();
-      this.Close();
       return true;
     } catch (SQLException e) {
       Print("[ "+this.name+" ]", "Delete: "+e.getMessage());

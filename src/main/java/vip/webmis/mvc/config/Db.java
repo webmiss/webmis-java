@@ -14,7 +14,7 @@ public class Db {
     Map<String, Object> data = new HashMap<>();
     switch(name) {
       case "default":
-        data.put("type", "mysql");                                  // 类型
+        data.put("type", "mariadb");                                // 类型
         data.put("host", "127.0.0.1");                              // 主机
         data.put("port", "3306");                                   // 端口
         data.put("user", "webmis");                                 // 用户名
@@ -26,7 +26,7 @@ public class Db {
         data.put("poolMaxWait", 3000);                              // 获取连接等待时间( 毫秒 )
         break;
       case "other":
-        data.put("type", "mysql");                                  // 类型
+        data.put("type", "mariadb");                                // 类型
         data.put("host", "127.0.0.1");                              // 主机
         data.put("port", "3306");                                   // 端口
         data.put("user", "webmis");                                 // 用户名

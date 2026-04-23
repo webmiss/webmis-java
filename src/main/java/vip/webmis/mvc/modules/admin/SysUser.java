@@ -107,9 +107,9 @@ public class SysUser extends ControllerBase {
     m.LeftJoin("sys_role as d", "c.role=d.id");
     m.Columns(
       "a.id", "a.uname", "a.email", "a.tel", "a.status", "FROM_UNIXTIME(a.rtime, '%Y-%m-%d %H:%i:%s') as rtime", "FROM_UNIXTIME(a.ltime, '%Y-%m-%d %H:%i:%s') as ltime", "FROM_UNIXTIME(a.utime, '%Y-%m-%d %H:%i:%s') as utime",
-      "b.type", "b.nickname", "b.department", "b.position", "b.name", "b.gender", "b.img", "b.remark", "FROM_UNIXTIME(b.birthday, '%Y-%m-%d') as birthday",
+      "b.type", "b.nickname", "b.department", "b.position", "CONCAT(b.name) as name", "b.gender", "b.img", "b.remark", "FROM_UNIXTIME(b.birthday, '%Y-%m-%d') as birthday",
       "c.role", "c.perm",
-      "d.name as role_name"
+      "CONCAT(d.name) as role_name"
     );
     m.Where(where);
     m.Order(!order.isEmpty()?order:"a.ltime DESC");

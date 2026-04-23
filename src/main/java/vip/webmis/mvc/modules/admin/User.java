@@ -102,8 +102,8 @@ public class User extends ControllerBase {
     m.Columns(
       "a.id", "a.status", "a.password", "a.tel", "a.email",
       "b.type", "b.nickname", "b.department", "b.position", "b.name", "b.gender", "FROM_UNIXTIME(b.birthday, '%Y-%m-%d') as birthday", "b.img", "b.signature",
-      "c.role", "c.perm",
-      "d.perm as role_perm"
+      "c.role", "CONCAT(c.perm) as perm",
+      "CONCAT(d.perm) as role_perm"
     );
     m.Where(where);
     Map<String, Object> data = m.FindFirst();
