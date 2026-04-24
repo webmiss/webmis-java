@@ -64,7 +64,7 @@ public class SysUser extends ControllerBase {
     // 数据
     Map<String, Object> total = new HashMap<String, Object>();
     if(one!=null) {
-      total.put("total", Integer.valueOf(one.get("total").toString()));
+      total.put("total", one.get("total")!=null?Integer.valueOf(one.get("total").toString()):0);
     }
     // 返回
     res = new HashMap<String, Object>();

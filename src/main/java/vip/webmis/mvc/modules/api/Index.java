@@ -30,7 +30,6 @@ public class Index extends ControllerBase {
     Redis r = new Redis();
     r.Set("test", "Java Redis");
     Print("Data", data, r.Get("test"));
-    r.Close();
     // 返回
     HashMap<String, Object> res = new HashMap<String, Object>();
     res.put("code",0);

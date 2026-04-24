@@ -7,30 +7,39 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.support.ConnectionPoolSupport;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /* 缓存数据库 */
 public class Redis  extends Base {
 
-  public static GenericObjectPool<StatefulRedisConnection<String, String>> pool;  // 连接池
-  public StatefulRedisConnection<String, String> conn;                            // 连接
-  private final String name = "Pool";                                             // 名称
+  private final String name = "Redis";                                                     // 名称
+  private static final Object LOCK = new Object();                                         // 锁
+  private static GenericObjectPool<StatefulRedisConnection<String, String>> pool_default;  // 连接池: default;
+  private static GenericObjectPool<StatefulRedisConnection<String, String>> pool_other;    // 连接池: other;
+  private static String db = "default";                                                    // 数据库
 
   /* 构造函数 */
   public Redis() {
-    this("default");
+    RedisConn("default");
   }
   public Redis(String name) {
-    // 创建1次
-    if (Redis.pool == null) {
-      // 配置
-      vip.webmis.mvc.config.Redis redis = new vip.webmis.mvc.config.Redis();
-      Map<String, Object> cfg = redis.Config(name);
-      try {
+    RedisConn(name);
+  }
+
+  /* 数据源 */
+  private static void initPool(String name) {
+    if("default".equals(name) && pool_default != null && !pool_default.isClosed()) return;
+    if("other".equals(name) && pool_other != null && !pool_other.isClosed()) return;
+    synchronized (LOCK) {
+      if("default".equals(name) && pool_default != null && !pool_default.isClosed()) return;
+      if("other".equals(name) && pool_other != null && !pool_other.isClosed()) return;
+      try{
+        // 配置
+        vip.webmis.mvc.config.Redis redis = new vip.webmis.mvc.config.Redis();
+        Map<String, Object> cfg = redis.Config(name);
         // 创建连接
         RedisURI redisURI = RedisURI.builder()
         .withHost((String)cfg.get("host"))
@@ -48,177 +57,424 @@ public class Redis  extends Base {
         poolConfig.setMaxTotal((Integer)cfg.get("maxTotal"));
         poolConfig.setMaxWait(Duration.ofMillis((Integer)cfg.get("maxWait")));
         // 创建连接池
-        Redis.pool = ConnectionPoolSupport.createGenericObjectPool(() -> redisClient.connect(), poolConfig);
+        if("default".equals(name)) Redis.pool_default = ConnectionPoolSupport.createGenericObjectPool(() -> redisClient.connect(), poolConfig);
+        else if("other".equals(name)) Redis.pool_other = ConnectionPoolSupport.createGenericObjectPool(() -> redisClient.connect(), poolConfig);
       } catch (Exception e) {
-        Print("[ "+this.name+" ]", e.getMessage());
+        Print("[ "+name+" ]", e.getMessage());
       }
     }
-    // 连接
-    if (this.conn == null) this.conn = RedisConn();
   }
 
   /* 获取连接 */
-  public StatefulRedisConnection<String, String> RedisConn() {
-    if (this.conn == null) {
-      try {
-        this.conn = Redis.pool.borrowObject();
-      } catch (Exception e) {
-        Print("[ "+this.name+" ] conn:", e.getMessage());
-      }
+  public StatefulRedisConnection<String, String> RedisConn(String name) {
+    db = name;
+    StatefulRedisConnection<String, String> conn = null;
+    try{
+      // 初始化连接池
+      initPool(name);
+      // 获取连接
+      if("default".equals(name)) conn = Redis.pool_default.borrowObject();
+      else if("other".equals(name)) conn = Redis.pool_other.borrowObject();
+    } catch(Exception e) {
+      Print("[ "+this.name+" ] RedisConn:", e.getMessage());
     }
-    return this.conn;
+    return conn;
   }
 
   /* 关闭连接 */
-  public void Close() {
-    if (this.conn != null) {
+  public void Close(StatefulRedisConnection<String, String> conn) {
+    if (conn != null) {
       try {
-        Redis.pool.returnObject(this.conn);
+        if("default".equals(db)) Redis.pool_default.returnObject(conn);
+        else if("other".equals(db)) Redis.pool_other.returnObject(conn);
       } catch (Exception e) {
         Print("[ "+this.name+" ] close:", e.getMessage());
+        conn = null;
       }
     }
   }
 
   /* 销毁连接池 */
   public void Destroy() {
-    if (Redis.pool != null) Redis.pool.close();
+    if (Redis.pool_default != null) Redis.pool_default.close();
+    if (Redis.pool_other != null) Redis.pool_other.close();
   }
 
   /* 添加 */
   public boolean Set(String key, String value) {
-    if (this.conn == null) return false;
-    this.conn.sync().set(key, value);
-    return true;
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return false;
+    // 执行
+    try {
+      conn.sync().set(key, value);
+      return true;
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Set:", e.getMessage());
+      return false;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 自增 */
   public long Incr(String key) {
-    if (this.conn == null) return 0;
-    return this.conn.sync().incr(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return 0;
+    // 执行
+    try{
+      return conn.sync().incr(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Incr:", e.getMessage());
+      return 0;
+    } finally {
+      Close(conn);
+    }
+    
   }
 
   /* 自减 */
   public long Decr(String key) {
-    if (this.conn == null) return 0;
-    return this.conn.sync().decr(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return 0;
+    // 执行
+    try{
+      return conn.sync().decr(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Decr:", e.getMessage());
+      return 0;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 获取 */
   public String Get(String key) {
-    if (this.conn == null) return "";
-    String res = this.conn.sync().get(key);
-    return res == null?"":res;
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      String res = conn.sync().get(key);
+      return res == null?"":res;
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Get:", e.getMessage());
+      return "";
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 删除 */
   public Long Del(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().del(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().del(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Del:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 是否存在 */
   public Long Exist(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().exists(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().exists(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Exist:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 设置过期时间(秒) */
   public boolean Expire(String key, int seconds) {
-    if (this.conn == null) return false;
-    return this.conn.sync().expire(key, Duration.ofSeconds(seconds));
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return false;
+    // 执行
+    try{
+      return conn.sync().expire(key, Duration.ofSeconds(seconds));
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Expire:", e.getMessage());
+      return false;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 获取过期时间(秒) */
   public Long Ttl(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().ttl(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().ttl(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Ttl:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 获取长度 */
   public Long Len(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().strlen(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().strlen(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] Len:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 哈希(Hash)-添加 */
   public boolean HSet(String key, String field, String value) {
-    if (this.conn == null) return false;
-    return this.conn.sync().hset(key, field, value);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return false;
+    // 执行
+    try{
+      return conn.sync().hset(key, field, value);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] HSet:", e.getMessage());
+      return false;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 哈希(Hash)-删除 */
   public Long HDel(String key, String field) {
-    if (this.conn == null) return null;
-    return this.conn.sync().hdel(key, field);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().hdel(key, field);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] HDel:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 哈希(Hash)-获取 */
   public String HGet(String key, String field) {
-    if (this.conn == null) return "";
-    return this.conn.sync().hget(key, field);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().hget(key, field);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] HGet:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 哈希(Hash)-获取全部 */
   public Map<String, String> HGetAll(String key) {
-    if (this.conn == null) return new HashMap<>();
-    return this.conn.sync().hgetall(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().hgetall(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] HGetAll:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 哈希(Hash)-获取全部字段 */
   public List<String> HKeys(String key) {
-    if (this.conn == null) return new ArrayList<>();
-    return this.conn.sync().hkeys(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().hkeys(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] HKeys:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 哈希(Hash)-获取全部值 */
   public List<String> HVals(String key) {
-    if (this.conn == null) return new ArrayList<>();
-    return this.conn.sync().hvals(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().hvals(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] HVals:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 哈希(Hash)-是否存在 */
   public Boolean HExist(String key, String field) {
-    if (this.conn == null) return false;
-    return this.conn.sync().hexists(key, field);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().hexists(key, field);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] HExist:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 哈希(Hash)-获取长度 */
   public Long HLen(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().hlen(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().hlen(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] HLen:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 列表(List)-添加 */
   public Long LPush(String key, String value) {
-    if (this.conn == null) return null;
-    return this.conn.sync().lpush(key, value);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().lpush(key, value);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] LPush:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
   public Long RPush(String key, String value) {
-    if (this.conn == null) return null;
-    return this.conn.sync().rpush(key, value);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().rpush(key, value);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] RPush:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
 
   /* 列表(List)-获取 */
   public List<String> LRange(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().lrange(key, 0, -1);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().lrange(key, 0, -1);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] LRange:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
   public String LPop(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().lpop(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().lpop(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] LPop:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
   public String RPop(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().rpop(key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().rpop(key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] RPop:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
   public KeyValue<String, String> BLPop(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().blpop(0, key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().blpop(0, key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] BLPop:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
   public KeyValue<String, String> BRPop(String key) {
-    if (this.conn == null) return null;
-    return this.conn.sync().brpop(0, key);
+    // 连接
+    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    if(conn==null) return null;
+    // 执行
+    try{
+      return conn.sync().brpop(0, key);
+    } catch (Exception e) {
+      Print("[ "+this.name+" ] BRPop:", e.getMessage());
+      return null;
+    } finally {
+      Close(conn);
+    }
   }
   
 }

@@ -26,16 +26,16 @@ public class TokenAdmin extends Base {
     // 是否过期
     String uid = String.valueOf(tData.get("uid"));
     String key = Env.admin_token_prefix+"_token_"+uid;
-    Redis redis = new Redis();
-    Long time = redis.Ttl(key);
+    Redis r = new Redis();
+    Long time = r.Ttl(key);
     if(time==null || time<1) return "请重新登录!";
     // 单点登录
-    String access_token = redis.Get(key);
+    String access_token = r.Get(key);
     if(Env.admin_token_sso && Hash.Md5(token)!=access_token) return "强制退出!";
     // 是否续期
     if(Env.admin_token_auto) {
-      redis.Expire(key, Env.admin_token_time);
-      redis.Expire(Env.admin_token_prefix+"_perm_"+uid, Env.admin_token_time);
+      r.Expire(key, Env.admin_token_time);
+      r.Expire(Env.admin_token_prefix+"_perm_"+uid, Env.admin_token_time);
     }
     // URL权限
     if(urlPerm.equals("")) return "";
@@ -70,9 +70,9 @@ public class TokenAdmin extends Base {
   /* 权限-保存 */
   public static boolean SavePerm(String uid, String perm) {
     String key = Env.admin_token_prefix+"_perm_"+uid;
-    Redis redis = new Redis();
-    redis.Set(key, perm);
-    redis.Expire(key, Env.admin_token_time);
+    Redis r = new Redis();
+    r.Set(key, perm);
+    r.Expire(key, Env.admin_token_time);
     return true;
   }
 
@@ -85,8 +85,8 @@ public class TokenAdmin extends Base {
     if(tData==null) return arr;
     // 权限
     String uid = String.valueOf(tData.get("uid"));
-    Redis redis = new Redis();
-    String permStr = redis.Get(Env.admin_token_prefix+"_perm_"+uid);
+    Redis r = new Redis();
+    String permStr = r.Get(Env.admin_token_prefix+"_perm_"+uid);
     if(permStr==null) return arr;
     // 拆分
     String[] tmp;
@@ -106,9 +106,9 @@ public class TokenAdmin extends Base {
     String token = Safety.Encode(data);
     // 缓存Token
     String key = Env.admin_token_prefix+"_token_"+data.get("uid");
-    Redis redis = new Redis();
-    redis.Set(key, Hash.Md5(token));
-    redis.Expire(key, Env.admin_token_time);
+    Redis r = new Redis();
+    r.Set(key, Hash.Md5(token));
+    r.Expire(key, Env.admin_token_time);
     return token;
   }
 
@@ -117,8 +117,8 @@ public class TokenAdmin extends Base {
     Map<String, Object> data = Safety.Decode(token);
     if(data==null) return null;
     // 过期时间
-    Redis redis = new Redis();
-    data.put("time", redis.Ttl(Env.admin_token_prefix+"_token_"+data.get("uid")));
+    Redis r = new Redis();
+    data.put("time", r.Ttl(Env.admin_token_prefix+"_token_"+data.get("uid")));
     return data;
   }
   

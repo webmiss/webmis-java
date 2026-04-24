@@ -62,8 +62,8 @@ public class User extends ControllerBase {
         return GetJSON(res);
       }
       // 验证码
-      Redis redis = new Redis();
-      String code = redis.Get(Env.admin_token_prefix+"_vcode_"+uname);
+      Redis r = new Redis();
+      String code = r.Get(Env.admin_token_prefix+"_vcode_"+uname);
       if(!code.equals("")) {
         if(code.length()!=4) {
           res = new HashMap<String, Object>();
@@ -82,8 +82,8 @@ public class User extends ControllerBase {
       where = "(a.uname='"+uname+"' OR a.tel='"+uname+"' OR a.email='"+uname+"') AND a.password='"+Hash.Md5(passwd)+"'";
     } else {
       // 验证码
-      Redis redis = new Redis();
-      String code = redis.Get(Env.admin_token_prefix+"_vcode_"+uname);
+      Redis r = new Redis();
+      String code = r.Get(Env.admin_token_prefix+"_vcode_"+uname);
       if(code.equals("") || code!=vcode) {
         res = new HashMap<String, Object>();
         res.put("code", 4000);
@@ -109,9 +109,9 @@ public class User extends ControllerBase {
     Map<String, Object> data = m.FindFirst();
     if(data.isEmpty()) {
       // 强制验证码(24小时)
-      Redis redis = new Redis();
-      redis.Set(Env.admin_token_prefix+"_vcode_"+uname, Time.Time().toString());
-      redis.Expire(Env.admin_token_prefix+"_vcode_"+uname, 24*3600);
+      Redis r = new Redis();
+      r.Set(Env.admin_token_prefix+"_vcode_"+uname, Time.Time().toString());
+      r.Expire(Env.admin_token_prefix+"_vcode_"+uname, 24*3600);
       // 返回
       res = new HashMap<String, Object>();
       res.put("code", 4000);
@@ -120,8 +120,8 @@ public class User extends ControllerBase {
       return GetJSON(res);
     } else {
       // 清除验证码
-      Redis redis = new Redis();
-      redis.Del(Env.admin_token_prefix+"_vcode_"+uname);
+      Redis r = new Redis();
+      r.Del(Env.admin_token_prefix+"_vcode_"+uname);
     }
     // 是否禁用
     if(data.get("status").equals("0")) {
