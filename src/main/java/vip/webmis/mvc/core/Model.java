@@ -32,9 +32,13 @@ public class Model extends Base {
   private Integer nums = 0;                         // 影响行数
 
   /* 获取连接 */
+  public Connection DBConn() {
+    return DBConn("default");
+  }
   public Connection DBConn(String name) {
+    this.db = name.equals("")?this.db:name;
     // 初始化连接池
-    MySQLConnectionPool.InitPool(name);
+    MySQLConnectionPool.InitPool(this.db);
     // 获取连接
     Connection conn = MySQLConnectionPool.GetConnection();
     // 返回
@@ -217,7 +221,7 @@ public class Model extends Base {
     ResultSet rs = null;
     try {
       // 连接
-      conn = DBConn(this.db);
+      conn = DBConn();
       if(conn==null) return res;
       // 执行
       ps = Exec(conn, sql, param);
@@ -253,7 +257,7 @@ public class Model extends Base {
     ResultSet rs = null;
     try {
       // 连接
-      conn = DBConn(this.db);
+      conn = DBConn();
       if(conn==null) return res;
       // 执行
       ps = Exec(conn, sql, param);
@@ -367,7 +371,7 @@ public class Model extends Base {
     PreparedStatement ps = null;
     try {
       // 连接
-      conn = DBConn(this.db);
+      conn = DBConn();
       if(conn==null) return -1;
       // 执行
       ps = Exec(conn, sql, param, false);
@@ -444,7 +448,7 @@ public class Model extends Base {
     PreparedStatement ps = null;
     try {
       // 连接
-      conn = DBConn(this.db);
+      conn = DBConn();
       if(conn==null) return false;
       // 执行
       ps = Exec(conn, sql, param, false);
@@ -500,7 +504,7 @@ public class Model extends Base {
     PreparedStatement ps = null;
     try {
       // 连接
-      conn = DBConn(this.db);
+      conn = DBConn();
       if(conn==null) return false;
       // 执行
       ps = Exec(conn, sql, param, false);
