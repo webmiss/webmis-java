@@ -34,9 +34,9 @@ public class Model extends Base {
   /* 获取连接 */
   public Connection DBConn(String name) {
     // 初始化连接池
-    MySQLConnectionPool.initPool(name);
+    MySQLConnectionPool.InitPool(name);
     // 获取连接
-    Connection conn = MySQLConnectionPool.getConnection();
+    Connection conn = MySQLConnectionPool.GetConnection();
     // 返回
     return conn;
   }
@@ -61,10 +61,9 @@ public class Model extends Base {
 
   /* 关闭 */
   public void Close(Connection conn) {
-    if(conn!=null) {
-      Boolean res = MySQLConnectionPool.releaseConnection(conn);
-      if(!res) Print("[ "+this.name+" ] Close:", "关闭失败");
-    }
+    if(conn==null) return;
+    Boolean res = MySQLConnectionPool.ReleaseConnection(conn);
+    if(!res) Print("[ "+this.name+" ] Close:", "关闭失败");
   }
 
   /* 获取-SQL */

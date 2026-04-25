@@ -15,18 +15,18 @@ import java.util.Map;
 /* 缓存数据库 */
 public class Redis  extends Base {
 
-  private final String name = "Redis";                                                     // 名称
-  private static final Object LOCK = new Object();                                         // 锁
   private static GenericObjectPool<StatefulRedisConnection<String, String>> pool_default;  // 连接池: default;
   private static GenericObjectPool<StatefulRedisConnection<String, String>> pool_other;    // 连接池: other;
+  private static final String name = "Redis";                                              // 名称
+  private static final Object LOCK = new Object();                                         // 锁
   private static String db = "default";                                                    // 数据库
 
   /* 构造函数 */
   public Redis() {
-    RedisConn("default");
+    db = "default";
   }
   public Redis(String name) {
-    RedisConn(name);
+    db = name;
   }
 
   /* 数据源 */
@@ -36,10 +36,10 @@ public class Redis  extends Base {
     synchronized (LOCK) {
       if("default".equals(name) && pool_default != null && !pool_default.isClosed()) return;
       if("other".equals(name) && pool_other != null && !pool_other.isClosed()) return;
+       // 配置
+      vip.webmis.mvc.config.Redis redis = new vip.webmis.mvc.config.Redis();
+      Map<String, Object> cfg = redis.Config(name);
       try{
-        // 配置
-        vip.webmis.mvc.config.Redis redis = new vip.webmis.mvc.config.Redis();
-        Map<String, Object> cfg = redis.Config(name);
         // 创建连接
         RedisURI redisURI = RedisURI.builder()
         .withHost((String)cfg.get("host"))
@@ -60,8 +60,9 @@ public class Redis  extends Base {
         if("default".equals(name)) Redis.pool_default = ConnectionPoolSupport.createGenericObjectPool(() -> redisClient.connect(), poolConfig);
         else if("other".equals(name)) Redis.pool_other = ConnectionPoolSupport.createGenericObjectPool(() -> redisClient.connect(), poolConfig);
       } catch (Exception e) {
-        Print("[ "+name+" ]", e.getMessage());
+        Print("[ "+Redis.name+" ]", e.getMessage());
       }
+      Print("[ "+Redis.name+" ] Redis Pool:", name, cfg.get("maxIdle"));
     }
   }
 
@@ -76,7 +77,7 @@ public class Redis  extends Base {
       if("default".equals(name)) conn = Redis.pool_default.borrowObject();
       else if("other".equals(name)) conn = Redis.pool_other.borrowObject();
     } catch(Exception e) {
-      Print("[ "+this.name+" ] RedisConn:", e.getMessage());
+      Print("[ "+Redis.name+" ] RedisConn:", e.getMessage());
     }
     return conn;
   }
@@ -88,7 +89,7 @@ public class Redis  extends Base {
         if("default".equals(db)) Redis.pool_default.returnObject(conn);
         else if("other".equals(db)) Redis.pool_other.returnObject(conn);
       } catch (Exception e) {
-        Print("[ "+this.name+" ] close:", e.getMessage());
+        Print("[ "+Redis.name+" ] close:", e.getMessage());
         conn = null;
       }
     }
@@ -110,7 +111,7 @@ public class Redis  extends Base {
       conn.sync().set(key, value);
       return true;
     } catch (Exception e) {
-      Print("[ "+this.name+" ] Set:", e.getMessage());
+      Print("[ "+Redis.name+" ] Set:", e.getMessage());
       return false;
     } finally {
       Close(conn);
@@ -126,7 +127,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().incr(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] Incr:", e.getMessage());
+      Print("[ "+Redis.name+" ] Incr:", e.getMessage());
       return 0;
     } finally {
       Close(conn);
@@ -143,7 +144,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().decr(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] Decr:", e.getMessage());
+      Print("[ "+Redis.name+" ] Decr:", e.getMessage());
       return 0;
     } finally {
       Close(conn);
@@ -160,7 +161,7 @@ public class Redis  extends Base {
       String res = conn.sync().get(key);
       return res == null?"":res;
     } catch (Exception e) {
-      Print("[ "+this.name+" ] Get:", e.getMessage());
+      Print("[ "+Redis.name+" ] Get:", e.getMessage());
       return "";
     } finally {
       Close(conn);
@@ -176,7 +177,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().del(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] Del:", e.getMessage());
+      Print("[ "+Redis.name+" ] Del:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -192,7 +193,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().exists(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] Exist:", e.getMessage());
+      Print("[ "+Redis.name+" ] Exist:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -208,7 +209,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().expire(key, Duration.ofSeconds(seconds));
     } catch (Exception e) {
-      Print("[ "+this.name+" ] Expire:", e.getMessage());
+      Print("[ "+Redis.name+" ] Expire:", e.getMessage());
       return false;
     } finally {
       Close(conn);
@@ -224,7 +225,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().ttl(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] Ttl:", e.getMessage());
+      Print("[ "+Redis.name+" ] Ttl:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -240,7 +241,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().strlen(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] Len:", e.getMessage());
+      Print("[ "+Redis.name+" ] Len:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -256,7 +257,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().hset(key, field, value);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] HSet:", e.getMessage());
+      Print("[ "+Redis.name+" ] HSet:", e.getMessage());
       return false;
     } finally {
       Close(conn);
@@ -272,7 +273,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().hdel(key, field);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] HDel:", e.getMessage());
+      Print("[ "+Redis.name+" ] HDel:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -288,7 +289,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().hget(key, field);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] HGet:", e.getMessage());
+      Print("[ "+Redis.name+" ] HGet:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -304,7 +305,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().hgetall(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] HGetAll:", e.getMessage());
+      Print("[ "+Redis.name+" ] HGetAll:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -320,7 +321,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().hkeys(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] HKeys:", e.getMessage());
+      Print("[ "+Redis.name+" ] HKeys:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -336,7 +337,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().hvals(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] HVals:", e.getMessage());
+      Print("[ "+Redis.name+" ] HVals:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -352,7 +353,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().hexists(key, field);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] HExist:", e.getMessage());
+      Print("[ "+Redis.name+" ] HExist:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -368,7 +369,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().hlen(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] HLen:", e.getMessage());
+      Print("[ "+Redis.name+" ] HLen:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -384,7 +385,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().lpush(key, value);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] LPush:", e.getMessage());
+      Print("[ "+Redis.name+" ] LPush:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -398,7 +399,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().rpush(key, value);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] RPush:", e.getMessage());
+      Print("[ "+Redis.name+" ] RPush:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -414,7 +415,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().lrange(key, 0, -1);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] LRange:", e.getMessage());
+      Print("[ "+Redis.name+" ] LRange:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -428,7 +429,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().lpop(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] LPop:", e.getMessage());
+      Print("[ "+Redis.name+" ] LPop:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -442,7 +443,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().rpop(key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] RPop:", e.getMessage());
+      Print("[ "+Redis.name+" ] RPop:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -456,7 +457,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().blpop(0, key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] BLPop:", e.getMessage());
+      Print("[ "+Redis.name+" ] BLPop:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -470,7 +471,7 @@ public class Redis  extends Base {
     try{
       return conn.sync().brpop(0, key);
     } catch (Exception e) {
-      Print("[ "+this.name+" ] BRPop:", e.getMessage());
+      Print("[ "+Redis.name+" ] BRPop:", e.getMessage());
       return null;
     } finally {
       Close(conn);

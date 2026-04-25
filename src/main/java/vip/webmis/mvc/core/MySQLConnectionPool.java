@@ -13,10 +13,10 @@ import vip.webmis.mvc.config.Db;
 /* MySQL 连接池 */
 public class MySQLConnectionPool extends Base {
 
-  private static final String name = "Pool";                // 名称
-  private static final Object LOCK = new Object();          // 锁
   private static BlockingQueue<Connection> pool_default;    // 连接池: default
   private static BlockingQueue<Connection> pool_other;      // 连接池: other
+  private static final String name = "MariaDB";                // 名称
+  private static final Object LOCK = new Object();          // 锁
   private static String db = "default";                     // 数据库
   private static int initSize;                              // 初始连接数
   private static int maxSize;                               // 最大连接数
@@ -26,9 +26,9 @@ public class MySQLConnectionPool extends Base {
   private static String password;                           // 密码
 
   /* 数据源 */
-  static void initPool(String name) {
-    // 配置
+  static void InitPool(String name) {
     db = name;
+    // 配置
     Map<String, Object> config = new Db().Config(name);
     initSize = (Integer) config.get("poolInitSize");
     maxSize = (Integer) config.get("poolMaxSize");
@@ -53,32 +53,32 @@ public class MySQLConnectionPool extends Base {
         Class.forName("org.mariadb.jdbc.Driver");
         // 初始化连接数
         for (int i = 0; i < initSize; i++) {
-          Connection conn = createConnection(url, user, password);
+          Connection conn = CreateConnection(url, user, password);
           if(conn != null) {
             if("default".equals(name)) pool_default.offer(conn);
             else if("other".equals(name)) pool_other.offer(conn);
           }
         }
-        Print("初始化连接池", name, initSize, maxSize);
+        Print("[ "+MySQLConnectionPool.name+" ] MariaDB Pool", name, GetIdleCount());
       } catch (Exception e) {
-        Print("[ "+name+" ]", e.getMessage());
+        Print("[ "+MySQLConnectionPool.name+" ] MariaDB Pool", e.getMessage());
       }
     }
   }
 
   /* 创建连接 */
-  private static Connection createConnection(String url, String user, String password) {
+  private static Connection CreateConnection(String url, String user, String password) {
     Connection conn = null;
     try {
       return DriverManager.getConnection(url, user, password);
     } catch (Exception e) {
-      Print("[ " + name + " ] 创建连接", e.getMessage());
+      Print("[ "+MySQLConnectionPool.name+" ] CreateConnection:", e.getMessage());
     }
     return conn;
   }
 
   /* 默认连接池 */
-  static public BlockingQueue<Connection> getIdleConnections() {
+  static public BlockingQueue<Connection> GetIdleConnections() {
     // 连接池
     BlockingQueue<Connection> idleConnections = null;
     if("default".equals(db)) idleConnections = pool_default;
@@ -87,17 +87,15 @@ public class MySQLConnectionPool extends Base {
   }
 
   /* 获取连接 */
-  static public Connection getConnection() {
+  static public Connection GetConnection() {
     // 连接池
-    BlockingQueue<Connection> idleConnections = getIdleConnections();
+    BlockingQueue<Connection> idleConnections = GetIdleConnections();
     if(idleConnections == null) return null;
-    // 获取
+    // 连接
     Connection conn = null;
     try{
       // 从队列取连接
-      Print("1.获取连接", maxWait, GetIdleCount());
       conn = idleConnections.poll(maxWait, TimeUnit.MILLISECONDS);
-      Print(conn, !conn.isClosed(), conn.isValid(2));
       if(conn!=null) {
         if(!conn.isClosed() && conn.isValid(2)) {
           return conn;
@@ -108,33 +106,32 @@ public class MySQLConnectionPool extends Base {
       // 创建连接
       int totalUsed = maxSize - idleConnections.remainingCapacity();
       if (totalUsed < maxSize) {
-        Connection newConn = createConnection(url, user, password);
-        if (newConn != null) return newConn;
+        Connection newConn = CreateConnection(url, user, password);
+        return newConn;
       }
-      Print("[ " + name + " ] 连接池已满，获取连接超时");
+      Print("[ "+MySQLConnectionPool.name+" ] Connection pool is full, timeout while acquiring idle connection");
     } catch (InterruptedException | SQLException e) {
-      Print("[ " + name + " ] 获取连接", e.getMessage());
+      Print("[ "+MySQLConnectionPool.name+" ] GetConnection:", e.getMessage());
     }
     return null;
   }
 
   /* 归还连接 */
-  static public boolean releaseConnection(Connection conn) {
+  static public boolean ReleaseConnection(Connection conn) {
     if (conn == null) return false;
     // 连接池
-    BlockingQueue<Connection> idleConnections = getIdleConnections();
+    BlockingQueue<Connection> idleConnections = GetIdleConnections();
     if(idleConnections == null) return false;
     // 获取
     try {
       if(!conn.isClosed() && conn.isValid(2)) {
         boolean ok = idleConnections.offer(conn);
-        Print("3.归还连接", ok, GetIdleCount(), conn);
         return ok;
       } else {
         try { conn.close(); } catch (Exception ignored) {}
       }
     } catch (SQLException e) {
-      Print("[ " + name + " ] 归还连接:", e.getMessage());
+      Print("[ "+MySQLConnectionPool.name+" ] ReleaseConnection:", e.getMessage());
     }
     return true;
   }
@@ -142,23 +139,26 @@ public class MySQLConnectionPool extends Base {
   /* 获取空闲连接数 */
   static public int GetIdleCount() {
     // 连接池
-    BlockingQueue<Connection> idleConnections = getIdleConnections();
+    BlockingQueue<Connection> idleConnections = GetIdleConnections();
     if(idleConnections == null) return 0;
     // 空闲连接数
     return idleConnections.size();
   }
 
   /* 销毁连接池 */
-  public void destroy() {
+  static public void Destroy() {
     try {
-      // default: 关闭连接、清空连接池
+      // 连接池: default
       for(Connection conn : pool_default) if(!conn.isClosed()) conn.close();
       if(pool_default!=null) pool_default.clear();
-      // other: 关闭连接、清空连接池
+      // 连接池: other
       for(Connection conn : pool_other) if(!conn.isClosed()) conn.close();
       if(pool_other!=null) pool_other.clear();
     } catch (SQLException e) {
-      Print("[ " + name +  " ] 销毁连接池:", e.getMessage());
+      Print("[ "+MySQLConnectionPool.name+" ] Destroy:", e.getMessage());
+    } finally {
+      pool_default = null;
+      pool_other = null;
     }
   }
   
