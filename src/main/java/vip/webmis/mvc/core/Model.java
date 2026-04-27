@@ -36,7 +36,8 @@ public class Model extends Base {
     return DBConn("default");
   }
   public Connection DBConn(String name) {
-    this.db = name.equals("")?this.db:name;
+    // 数据库
+    if(!name.equals("")) this.db = name;
     // 初始化连接池
     MySQLConnectionPool.InitPool(this.db);
     // 获取连接
