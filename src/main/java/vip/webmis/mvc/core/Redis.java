@@ -26,6 +26,7 @@ public class Redis  extends Base {
     db = "default";
   }
   public Redis(String name) {
+    // 数据库
     db = name;
   }
 
@@ -38,7 +39,7 @@ public class Redis  extends Base {
       if("other".equals(name) && pool_other != null && !pool_other.isClosed()) return;
        // 配置
       vip.webmis.mvc.config.Redis redis = new vip.webmis.mvc.config.Redis();
-      Map<String, Object> cfg = redis.Config(name);
+      Map<String, Object> cfg = redis.Config(db);
       try{
         // 创建连接
         RedisURI redisURI = RedisURI.builder()
@@ -67,15 +68,14 @@ public class Redis  extends Base {
   }
 
   /* 获取连接 */
-  public StatefulRedisConnection<String, String> RedisConn(String name) {
-    db = name;
+  public StatefulRedisConnection<String, String> RedisConn() {
     StatefulRedisConnection<String, String> conn = null;
     try{
       // 初始化连接池
-      initPool(name);
+      initPool(db);
       // 获取连接
-      if("default".equals(name)) conn = Redis.pool_default.borrowObject();
-      else if("other".equals(name)) conn = Redis.pool_other.borrowObject();
+      if("default".equals(db)) conn = Redis.pool_default.borrowObject();
+      else if("other".equals(db)) conn = Redis.pool_other.borrowObject();
     } catch(Exception e) {
       Print("[ "+Redis.name+" ] RedisConn:", e.getMessage());
     }
@@ -104,7 +104,7 @@ public class Redis  extends Base {
   /* 添加 */
   public boolean Set(String key, String value) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return false;
     // 执行
     try {
@@ -121,7 +121,7 @@ public class Redis  extends Base {
   /* 自增 */
   public long Incr(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return 0;
     // 执行
     try{
@@ -138,7 +138,7 @@ public class Redis  extends Base {
   /* 自减 */
   public long Decr(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return 0;
     // 执行
     try{
@@ -154,7 +154,7 @@ public class Redis  extends Base {
   /* 获取 */
   public String Get(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -171,7 +171,7 @@ public class Redis  extends Base {
   /* 删除 */
   public Long Del(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -185,16 +185,17 @@ public class Redis  extends Base {
   }
 
   /* 是否存在 */
-  public Long Exist(String key) {
+  public boolean Exist(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
-    if(conn==null) return null;
+    StatefulRedisConnection<String, String> conn = RedisConn();
+    if(conn==null) return false;
     // 执行
     try{
-      return conn.sync().exists(key);
+      Long res = conn.sync().exists(key);
+      return res != null && res > 0;
     } catch (Exception e) {
       Print("[ "+Redis.name+" ] Exist:", e.getMessage());
-      return null;
+      return false;
     } finally {
       Close(conn);
     }
@@ -203,7 +204,7 @@ public class Redis  extends Base {
   /* 设置过期时间(秒) */
   public boolean Expire(String key, int seconds) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return false;
     // 执行
     try{
@@ -219,7 +220,7 @@ public class Redis  extends Base {
   /* 获取过期时间(秒) */
   public Long Ttl(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -233,15 +234,15 @@ public class Redis  extends Base {
   }
 
   /* 获取长度 */
-  public Long Len(String key) {
+  public Long StrLen(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
       return conn.sync().strlen(key);
     } catch (Exception e) {
-      Print("[ "+Redis.name+" ] Len:", e.getMessage());
+      Print("[ "+Redis.name+" ] StrLen:", e.getMessage());
       return null;
     } finally {
       Close(conn);
@@ -251,7 +252,7 @@ public class Redis  extends Base {
   /* 哈希(Hash)-添加 */
   public boolean HSet(String key, String field, String value) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return false;
     // 执行
     try{
@@ -265,16 +266,17 @@ public class Redis  extends Base {
   }
 
   /* 哈希(Hash)-删除 */
-  public Long HDel(String key, String field) {
+  public boolean HDel(String key, String field) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
-    if(conn==null) return null;
+    StatefulRedisConnection<String, String> conn = RedisConn();
+    if(conn==null) return false;
     // 执行
     try{
-      return conn.sync().hdel(key, field);
+      Long res = conn.sync().hdel(key, field);
+      return res != null && res > 0;
     } catch (Exception e) {
       Print("[ "+Redis.name+" ] HDel:", e.getMessage());
-      return null;
+      return false;
     } finally {
       Close(conn);
     }
@@ -283,7 +285,7 @@ public class Redis  extends Base {
   /* 哈希(Hash)-获取 */
   public String HGet(String key, String field) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -299,7 +301,7 @@ public class Redis  extends Base {
   /* 哈希(Hash)-获取全部 */
   public Map<String, String> HGetAll(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -315,7 +317,7 @@ public class Redis  extends Base {
   /* 哈希(Hash)-获取全部字段 */
   public List<String> HKeys(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -331,7 +333,7 @@ public class Redis  extends Base {
   /* 哈希(Hash)-获取全部值 */
   public List<String> HVals(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -347,7 +349,7 @@ public class Redis  extends Base {
   /* 哈希(Hash)-是否存在 */
   public Boolean HExist(String key, String field) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -363,7 +365,7 @@ public class Redis  extends Base {
   /* 哈希(Hash)-获取长度 */
   public Long HLen(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -379,7 +381,7 @@ public class Redis  extends Base {
   /* 列表(List)-添加 */
   public Long LPush(String key, String value) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -393,7 +395,7 @@ public class Redis  extends Base {
   }
   public Long RPush(String key, String value) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -409,7 +411,7 @@ public class Redis  extends Base {
   /* 列表(List)-获取 */
   public List<String> LRange(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -423,7 +425,7 @@ public class Redis  extends Base {
   }
   public String LPop(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -437,7 +439,7 @@ public class Redis  extends Base {
   }
   public String RPop(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -451,7 +453,7 @@ public class Redis  extends Base {
   }
   public KeyValue<String, String> BLPop(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{
@@ -465,7 +467,7 @@ public class Redis  extends Base {
   }
   public KeyValue<String, String> BRPop(String key) {
     // 连接
-    StatefulRedisConnection<String, String> conn = RedisConn(db);
+    StatefulRedisConnection<String, String> conn = RedisConn();
     if(conn==null) return null;
     // 执行
     try{

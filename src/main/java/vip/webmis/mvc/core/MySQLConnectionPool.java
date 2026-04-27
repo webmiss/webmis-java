@@ -15,7 +15,7 @@ public class MySQLConnectionPool extends Base {
 
   private static BlockingQueue<Connection> pool_default;    // 连接池: default
   private static BlockingQueue<Connection> pool_other;      // 连接池: other
-  private static final String name = "MariaDB";                // 名称
+  private static final String name = "MariaDB";             // 名称
   private static final Object LOCK = new Object();          // 锁
   private static String db = "default";                     // 数据库
   private static int initSize;                              // 初始连接数
@@ -53,21 +53,21 @@ public class MySQLConnectionPool extends Base {
         Class.forName("org.mariadb.jdbc.Driver");
         // 初始化连接数
         for (int i = 0; i < initSize; i++) {
-          Connection conn = CreateConnection(url, user, password);
+          Connection conn = CreateConnection();
           if(conn != null) {
             if("default".equals(name)) pool_default.offer(conn);
             else if("other".equals(name)) pool_other.offer(conn);
           }
         }
-        Print("[ "+MySQLConnectionPool.name+" ] MariaDB Pool", name, GetIdleCount());
+        Print("[ "+MySQLConnectionPool.name+" ] MariaDB Pool:", name, GetIdleCount());
       } catch (Exception e) {
-        Print("[ "+MySQLConnectionPool.name+" ] MariaDB Pool", e.getMessage());
+        Print("[ "+MySQLConnectionPool.name+" ] MariaDB Pool:", e.getMessage());
       }
     }
   }
 
   /* 创建连接 */
-  private static Connection CreateConnection(String url, String user, String password) {
+  private static Connection CreateConnection() {
     Connection conn = null;
     try {
       return DriverManager.getConnection(url, user, password);
@@ -89,13 +89,13 @@ public class MySQLConnectionPool extends Base {
   /* 获取连接 */
   static public Connection GetConnection() {
     // 连接池
-    BlockingQueue<Connection> idleConnections = GetIdleConnections();
-    if(idleConnections == null) return null;
+    BlockingQueue<Connection> idle = GetIdleConnections();
+    if(idle == null) return null;
     // 连接
     Connection conn = null;
     try{
       // 从队列取连接
-      conn = idleConnections.poll(maxWait, TimeUnit.MILLISECONDS);
+      conn = idle.poll(maxWait, TimeUnit.MILLISECONDS);
       if(conn!=null) {
         if(!conn.isClosed() && conn.isValid(2)) {
           return conn;
@@ -104,9 +104,9 @@ public class MySQLConnectionPool extends Base {
         }
       } 
       // 创建连接
-      int totalUsed = maxSize - idleConnections.remainingCapacity();
+      int totalUsed = maxSize - idle.remainingCapacity();
       if (totalUsed < maxSize) {
-        Connection newConn = CreateConnection(url, user, password);
+        Connection newConn = CreateConnection();
         return newConn;
       }
       Print("[ "+MySQLConnectionPool.name+" ] Connection pool is full, timeout while acquiring idle connection");
@@ -120,13 +120,12 @@ public class MySQLConnectionPool extends Base {
   static public boolean ReleaseConnection(Connection conn) {
     if (conn == null) return false;
     // 连接池
-    BlockingQueue<Connection> idleConnections = GetIdleConnections();
-    if(idleConnections == null) return false;
+    BlockingQueue<Connection> idle = GetIdleConnections();
+    if(idle == null) return false;
     // 获取
     try {
       if(!conn.isClosed() && conn.isValid(2)) {
-        boolean ok = idleConnections.offer(conn);
-        return ok;
+        return idle.offer(conn);
       } else {
         try { conn.close(); } catch (Exception ignored) {}
       }
@@ -139,10 +138,10 @@ public class MySQLConnectionPool extends Base {
   /* 获取空闲连接数 */
   static public int GetIdleCount() {
     // 连接池
-    BlockingQueue<Connection> idleConnections = GetIdleConnections();
-    if(idleConnections == null) return 0;
+    BlockingQueue<Connection> idle = GetIdleConnections();
+    if(idle == null) return 0;
     // 空闲连接数
-    return idleConnections.size();
+    return idle.size();
   }
 
   /* 销毁连接池 */

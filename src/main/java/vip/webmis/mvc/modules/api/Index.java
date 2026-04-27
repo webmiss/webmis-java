@@ -26,10 +26,11 @@ public class Index extends ControllerBase {
     User m = new User();
     m.Columns("id", "uname");
     List<HashMap<String, Object>> data = m.Find();
+    Print("Model:", data);
     // Redis
     Redis r = new Redis();
     r.Set("test", "Java Redis");
-    Print("Data", data, r.Get("test"));
+    Print("Redis:", r.Get("test"));
     // 返回
     HashMap<String, Object> res = new HashMap<String, Object>();
     res.put("code",0);
