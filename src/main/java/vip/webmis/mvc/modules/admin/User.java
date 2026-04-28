@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import vip.webmis.mvc.config.Env;
 import vip.webmis.mvc.core.ControllerBase;
 import vip.webmis.mvc.core.Redis;
+import vip.webmis.mvc.librarys.Captcha;
 import vip.webmis.mvc.librarys.Safety;
 import vip.webmis.mvc.service.Data;
 import vip.webmis.mvc.service.TokenAdmin;
@@ -35,7 +37,6 @@ public class User extends ControllerBase {
     String uname = String.valueOf(JsonName(json, "uname"));
     String passwd = String.valueOf(JsonName(json, "passwd"));
     String vcode = String.valueOf(JsonName(json, "vcode"));
-    // String vcode_url = "http://localhost:9000/admin/user/vcode/"+uname+"?"+Time.Time();
     String vcode_url = BaseUrl(request, "admin/user/vcode")+"/"+uname+"?"+Time.Time();
     // 验证
     if(!Safety.IsRight("uname", uname) &&!Safety.IsRight("tel", uname) &&!Safety.IsRight("email", uname)) {
@@ -44,7 +45,7 @@ public class User extends ControllerBase {
       res.put("msg", GetLang("login_uname"));
       return GetJSON(res);
     }
-    if(!passwd.equals("") && !vcode.equals("")) {
+    if(passwd.equals("") && vcode.equals("")) {
       res = new HashMap<String, Object>();
       res.put("code", 4000);
       res.put("msg", GetLang("login_verify"));
@@ -65,13 +66,13 @@ public class User extends ControllerBase {
       Redis r = new Redis();
       String code = r.Get(Env.admin_token_prefix+"_vcode_"+uname);
       if(!code.equals("")) {
-        if(code.length()!=4) {
+        if(vcode.length()!=4) {
           res = new HashMap<String, Object>();
           res.put("code", 4001);
           res.put("msg", GetLang("login_vcode"));
           res.put("vcode_url", vcode_url);
           return GetJSON(res);
-        } else if(code != vcode) {
+        } else if(!code.equals(vcode)) {
           res = new HashMap<String, Object>();
           res.put("code", 4002);
           res.put("msg", GetLang("login_verify_vcode"));
@@ -181,7 +182,7 @@ public class User extends ControllerBase {
 
   /* Token验证 */
   @RequestMapping(value="user/token", produces="application/json;charset=UTF-8")
-  public Map<String, Object> Token(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json, HttpServletRequest request) {
+  public Map<String, Object> Token(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json) {
     ControllerBase.lang = params.get("lang");
     Map<String, Object> res;
     // 参数
@@ -221,5 +222,31 @@ public class User extends ControllerBase {
     res.put("data", data);
     return GetJSON(res);
   }
-  
+
+  /* 验证码-图形 */
+  @RequestMapping(value="user/vcode/{uname}", produces="application/json;charset=UTF-8")
+  public byte[] Vcode(@PathVariable("uname") String uname) {
+    // 生成
+    Object[] res = Captcha.Vcode();
+    // 缓存
+    Redis redis = new Redis();
+    redis.Set(Env.admin_token_prefix+"_vcode_"+uname, Util.Lower(res[0].toString()));
+    redis.Expire(Env.admin_token_prefix+"_vcode_"+uname, 24*3600);
+    // 返回
+    return (byte[]) res[1];
+  }
+
+  /* 验证码-数字 */
+  @RequestMapping(value="user/vcode_num", produces="application/json;charset=UTF-8")
+  public Map<String, Object> VcodeNum(@RequestParam Map<String, String> params, @RequestBody Map<String, Object> json) {
+    ControllerBase.lang = params.get("lang");
+    Map<String, Object> res;
+    // 参数
+    String code = Captcha.GetCode(4);
+    Print(code);
+    // 返回
+    res = new HashMap<String, Object>();
+    res.put("code", 0);
+    return GetJSON(res);
+  }
 }
