@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import vip.webmis.mvc.config.Env;
 import vip.webmis.mvc.core.ControllerBase;
 import vip.webmis.mvc.core.Redis;
@@ -225,15 +226,17 @@ public class User extends ControllerBase {
 
   /* 验证码-图形 */
   @RequestMapping(value="user/vcode/{uname}", produces="application/json;charset=UTF-8")
-  public byte[] Vcode(@PathVariable("uname") String uname) {
+  public byte[] Vcode(@PathVariable("uname") String uname, HttpServletResponse response) {
     // 生成
     Object[] res = Captcha.Vcode();
-    // 缓存
+    // 缓存(24小时)
     Redis redis = new Redis();
     redis.Set(Env.admin_token_prefix+"_vcode_"+uname, Util.Lower(res[0].toString()));
     redis.Expire(Env.admin_token_prefix+"_vcode_"+uname, 24*3600);
     // 返回
-    return (byte[]) res[1];
+    return GetFile(response, (byte[]) res[1], new HashMap<String, String>(){{
+      put("Content-Type", "image/png");
+    }});
   }
 
   /* 验证码-数字 */

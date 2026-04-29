@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /* 控制器 */
 public class ControllerBase extends Base {
@@ -57,6 +58,16 @@ public class ControllerBase extends Base {
       String msg = GetLang("code_"+data.get("code"), lang);
       data.put("msg", msg);
     }
+    return data;
+  }
+
+  /* 返回文件 */
+  public byte[] GetFile(HttpServletResponse response, byte[] data, Map<String, String> header) {
+    // Header
+    for(Map.Entry<String, String> entry : header.entrySet()) {
+      response.setHeader(entry.getKey(), entry.getValue());
+    }
+    // 返回
     return data;
   }
 

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import vip.webmis.mvc.config.Env;
 import vip.webmis.mvc.core.ControllerBase;
 import vip.webmis.mvc.librarys.FileEo;
@@ -202,7 +203,7 @@ public class SysFile extends ControllerBase {
 
   /* 下载 */
   @RequestMapping(value="sys_file/down", produces="application/json;charset=UTF-8")
-  public byte[] Down(@RequestBody Map<String, Object> json, HttpServletRequest request) {
+  public byte[] Down(@RequestBody Map<String, Object> json, HttpServletRequest request, HttpServletResponse response) {
     // 参数
     String token = String.valueOf(JsonName(json, "token"));
     String path = String.valueOf(JsonName(json, "path"));
@@ -215,6 +216,8 @@ public class SysFile extends ControllerBase {
     FileEo.Root = Env.root_dir + dirRoot;
     byte[] data = FileEo.Bytes(path+filename);
     // 返回
-    return data;
+    return GetFile(response, data, new HashMap<String, String>(){{
+      put("Content-Type", "application/octet-stream");
+    }});
   }
 }
