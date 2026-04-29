@@ -11,21 +11,31 @@ if ! command -v java &> /dev/null; then
   echo "> 请安装'java'"
   exit
 fi
-# Maven环境
-if ! command -v mvn &> /dev/null; then
-  echo "> 请安装'maven'"
-  exit
-fi
 
 # 运行
 if [ "$s" == "serve" ]; then
+  # Maven环境
+  if ! command -v mvn &> /dev/null; then
+    echo "> 请安装'maven'"
+    exit
+  fi
   mvn spring-boot:run
 # 安装
 elif [ "$s" == "install" ]; then
+  # Maven环境
+  if ! command -v mvn &> /dev/null; then
+    echo "> 请安装'maven'"
+    exit
+  fi
   mvn clean && mvn compile
   echo "运行: ./bash serve"
 # 打包
 elif [ "$s" == "build" ]; then
+  # Maven环境
+  if ! command -v mvn &> /dev/null; then
+    echo "> 请安装'maven'"
+    exit
+  fi
   mvn package -DskipTests && rm -fr "./$name$version.jar" && cp "target/$name.jar" "./$name$version.jar"
 # 启动
 elif [ "$s" == "start" ]; then
